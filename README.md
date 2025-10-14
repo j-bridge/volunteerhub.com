@@ -3,7 +3,7 @@
 VolunteerHub is a full-stack web application that connects volunteers with nonprofit organizations. The platform covers user authentication, organization management, volunteer applications, and an admin dashboard for moderation.
 
 ## Documentation
-See [Full Project Timeline](docs/PROJECT_TIMELINE.md), [Assigned Responsibilities](docs/Gantt_Timeline_Assigned_Responsibilities.md), [Plain-Text Timeline](docs/Integrated_Project_Timeline_Assignments_Plain.md), and [PDF Submission](docs/Integrated_Project_Timeline_PDF_Submission.md).
+See [Assigned Responsibilities](docs/Gantt_Timeline_Assigned_Responsibilities.md), [Plain-Text Timeline](docs/Integrated_Project_Timeline_Assignments_Plain.md), and [PDF Submission](docs/Integrated_Project_Timeline_PDF_Submission.md).
 
 ## Project Overview
 - Enable volunteers to discover and apply to opportunities hosted by verified organizations.
