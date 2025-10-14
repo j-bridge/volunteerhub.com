@@ -1,0 +1,95 @@
+# =========================================================
+# VolunteerHub .gitignore
+# Full-stack project (React + Vite + Flask)
+# =========================================================
+
+# ---- Node / Frontend ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vscode/
+dist/
+build/
+.cache/
+.tmp/
+coverage/
+
+# React app (client)
+app/client/node_modules/
+app/client/dist/
+app/client/.vite/
+app/client/.DS_Store
+
+# ---- Python / Backend ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+instance/
+.env
+.venv/
+venv/
+env/
+*.db
+*.sqlite3
+app/server/instance/
+app/server/__pycache__/
+
+# ---- System / OS ----
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# ---- Environment / Config ----
+*.env
+.env.*
+.env.local
+.env.production
+.env.development
+.env.test
+
+# ---- Logs ----
+logs/
+*.log
+*.out
+*.pid
+*.seed
+*.bak
+
+# ---- Project Docs / Exports ----
+docs/**/*.pdf
+docs/**/*.docx
+docs/**/*.tmp
+
+# ---- IDE / Tooling ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.orig
+
+# ---- Husky / Commitlint (if re-added later) ----
+.husky/
+.commitlintrc.json
+
+# ---- Package Lock Files (root only) ----
+/package-lock.json
+
+# ---- OS & Misc ----
+*.iml
+*.bak
+*.tmp
+*.old
+*.log
+*.swp
+*~
+
+# =========================================================
+# End of .gitignore
+# =========================================================
