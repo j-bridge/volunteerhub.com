@@ -24,9 +24,9 @@ See [Integrated Project Timeline w/ Assignments](docs/timeline/Integrated_Projec
 ### Frontend
 ```bash
 mkdir app/client -p
-cd app client
+cd app clienthttps://github.com/j-bridge/volunteerhub.com/
 npm create vite@latest . -- --template react
-npm install
+npm installhttps://github.com/j-bridge/volunteerhub.com/
 npm run dev
 
 # Optional Chakra UI setup
@@ -68,7 +68,9 @@ app/client/dist
 ```bash
 cd app/server
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate #Mac/Linux
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass #If permission issue Windows
+.\.venv\Scripts\Activate.ps1 #Activation on Windows
 pip install -r requirements.txt
 flask --app wsgi.py run --debug
 # or
