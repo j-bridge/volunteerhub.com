@@ -1,44 +1,56 @@
-import { Box, Container, Flex, HStack, Button } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
+import { Box, Flex, HStack, Link, Button, Spacer, Text } from "@chakra-ui/react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function NavBar() {
-  return (
-    <Box
-      as="header"
-      position="sticky"
-      top={0}
-      zIndex={50}
-      bg="chakra-body-bg"
-      borderBottomWidth="1px"
-    >
-      <Container maxW="container.xl" px={6}>
-        <Flex h={16} align="center" justify="space-between">
-          {/* Logo / Brand */}
-          <Button
-            as={RouterLink}
-            to="/"
-            variant="link"
-            fontWeight="bold"
-            fontSize="xl"
-            px={0}
-          >
-            VolunteerHub
-          </Button>
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-          {/* Navigation Links */}
-          <HStack spacing={6}>
-            <Button as={RouterLink} to="/" variant="ghost" px={0}>
-              Home
-            </Button>
-            <Button as={RouterLink} to="/volunteer" variant="ghost" px={0}>
-              Volunteer
-            </Button>
-            <Button as={RouterLink} to="/contact" variant="ghost" px={0}>
-              Contact
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  return (
+    <Box as="nav" w="100%" bg="white" boxShadow="sm" px={8} py={4} position="sticky" top="0" zIndex="1000">
+      <Flex align="center">
+        {/* Logo acts as Home */}
+        <Link as={RouterLink} to="/" _hover={{ textDecoration: "none" }}>
+          <Text fontSize="xl" fontWeight="bold" color="teal.500">
+            VolunteerHub
+          </Text>
+        </Link>
+
+        <Spacer />
+
+        {/* Primary nav links (hide "Home") */}
+        <HStack spacing={6} display={{ base: "none", md: "flex" }}>
+          <Link as={RouterLink} to="/opportunities" fontWeight="500">Opportunities</Link>
+          <Link as={RouterLink} to="/about" fontWeight="500">About</Link>
+          <Link as={RouterLink} to="/contact" fontWeight="500">Contact</Link>
+        </HStack>
+
+        <Spacer />
+
+        {/* Auth-aware actions */}
+        {user ? (
+          <HStack spacing={4}>
+            <Text fontSize="sm" color="gray.600">Hello, {user?.name || user?.email || "Volunteer"}</Text>
+            <Button onClick={handleLogout} colorScheme="teal" variant="outline" size="sm">
+              Log out
             </Button>
           </HStack>
-        </Flex>
-      </Container>
+        ) : (
+          <HStack spacing={4}>
+            <Button as={RouterLink} to="/login" colorScheme="teal" variant="outline" size="sm">
+              Log In
+            </Button>
+            <Button as={RouterLink} to="/signup" colorScheme="teal" size="sm">
+              Sign Up
+            </Button>
+          </HStack>
+        )}
+      </Flex>
     </Box>
   );
 }
