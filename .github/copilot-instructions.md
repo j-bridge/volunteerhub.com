@@ -1,4 +1,4 @@
-# AI Coding Assistant Instructions - VolunteerHub
+# AI Coding Assistant Instructions - VolunteerHub.1
 
 ## Project Overview
 VolunteerHub is a full-stack web application connecting volunteers with nonprofit organizations, built using React (frontend) and Flask (backend). The system supports user authentication, organization management, volunteer applications, and administrative oversight.
