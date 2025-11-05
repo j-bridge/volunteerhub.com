@@ -29,7 +29,6 @@ __pycache__/
 *.pyd
 *.egg-info/
 instance/
-.env
 .venv/
 venv/
 env/
