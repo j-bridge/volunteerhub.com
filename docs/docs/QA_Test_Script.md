@@ -1,76 +1,157 @@
-# VolunteerHub — QA Test Script (Frontend → Backend Routes)
+# VolunteerHub — QA Test Script (Frontend → Backend Routes, FINAL)
 
-**Scope:** Map user flows in the UI to API endpoints for functional QA.  
-**Base URL:** `${VITE_API_URL}` (e.g., `http://localhost:5000/api`)  
-**Auth:** Bearer access token (set by axios interceptor) unless noted.  
-**Test Data:** Use one test org, one test user (volunteer), and one opportunity.
-
----
-
-## Master Mapping Table
-
-| # | Frontend Component | User Action | HTTP | Backend Endpoint | Auth | Request (example) | Success (status & body) | Failure (status) | Test Steps | Expected Result | Notes |
-|---|--------------------|-------------|------|------------------|------|-------------------|--------------------------|------------------|-------------|-----------------|-------|
-| 1 | `Auth/Login.jsx` | Log in | POST | `/auth/login` | No | `{"email":"user@example.com","password":"Passw0rd!"}` | **200** `{access_token, refresh_token, user}` | **401** invalid creds | Open Login → enter valid creds → Submit | Redirect to dashboard; token stored | Verify axios adds `Authorization: Bearer` |
-| 2 | `Auth/Register.jsx` | Register new user | POST | `/auth/register` | No | `{"name":"Jane","email":"jane@x.com","password":"Passw0rd!","role":"volunteer"}` | **201** `{user, tokens}` | **400/409** | Sign Up → fill → Submit | Account created; optionally auto-login | Confirm required fields/roles |
-| 3 | `api/axios.js` (interceptor) | Refresh access token | POST | `/auth/refresh` | Refresh only | — | **200** `{access_token}` | **401** expired/invalid | Let token expire and trigger a protected call | Request retried successfully | Check refresh storage (cookie vs memory) |
-| 4 | `Profile/Profile.jsx` | Get current user profile | GET | `/users/me` | Yes | — | **200** `{user}` | **401** missing/invalid | Navigate to Profile | Profile renders | Endpoint could be `/users/{id}` |
-| 5 | `Profile/EditProfile.jsx` | Update current profile | PATCH | `/users/me` | Yes | `{"name":"New Name"}` | **200** `{user}` | **400/401** | Edit → Save | Toast success; fields update | Some APIs use PUT |
-| 6 | `Opportunities/List.jsx` | List/search opportunities | GET | `/opportunities?search=&page=&tag=` | Optional | — | **200** `{items, page, total}` | **400** bad query | Open Opportunities; search/filter | List updates; pagination works | Verify param names |
-| 7 | `Opportunities/Detail.jsx` | Get single opportunity | GET | `/opportunities/{id}` | Optional | — | **200** `{opportunity}` | **404** not found | Click opportunity | Detail renders | — |
-| 8 | `Opportunities/Create.jsx` | Create opportunity (org/admin) | POST | `/opportunities` | Yes | `{"title":"Beach Cleanup","date":"2025-11-10","location":"NC","description":"..."}` | **201** `{opportunity}` | **400/403** | Login as org → New → Submit | Redirect to detail; success toast | Verify required schema |
-| 9 | `Opportunities/Edit.jsx` | Update opportunity | PUT | `/opportunities/{id}` | Yes | `{"title":"Updated title"}` | **200** `{opportunity}` | **400/403/404** | Edit → Save | Changes persist & reflect | Could be PATCH |
-|10 | `Opportunities/List.jsx` | Delete opportunity | DELETE | `/opportunities/{id}` | Yes | — | **204** | **403/404** | Click Delete | Row removed | Confirm soft vs hard delete |
-|11 | `Opportunities/Detail.jsx` | Apply to opportunity | POST | `/applications` | Yes | `{"opportunity_id":"<id>"}` | **201** `{application}` | **400/401** | Volunteer → click Apply | Button toggles to “Withdraw” | — |
-|12 | `Profile/Applications.jsx` | List my applications | GET | `/applications?user=me` | Yes | — | **200** `{items}` | **401** | Open “My Applications” | Applications render with status | Param may differ |
-|13 | `Opportunities/Detail.jsx` | Withdraw application | DELETE | `/applications/{id}` | Yes | — | **204** | **403/404** | Click “Withdraw” | Button returns to Apply | May be `POST /applications/{id}/withdraw` |
-|14 | `Admin/Orgs/List.jsx` | List organizations | GET | `/orgs` | Yes (admin) | — | **200** `{items}` | **403** forbidden | Admin → Orgs | Table shows orgs | — |
-|15 | `Admin/Orgs/Create.jsx` | Create organization | POST | `/orgs` | Yes (admin) | `{"name":"Habitat","email":"hello@org.org"}` | **201** `{org}` | **400/403** | Admin → New Org → Submit | Org appears in list | — |
-|16 | `Admin/Orgs/Edit.jsx` | Update organization | PUT | `/orgs/{id}` | Yes (admin) | `{"name":"Habitat NC"}` | **200** `{org}` | **400/403/404** | Edit → Save | Changes persist | Could be PATCH |
-|17 | `Admin/Orgs/List.jsx` | Delete organization | DELETE | `/orgs/{id}` | Yes (admin) | — | **204** | **403/404** | Delete org from table | Removed from list | — |
-|18 | Global guarded routes | Access protected page | GET | any protected | Yes | — | **200** | **401/403** | Try accessing page logged out | Redirects to login | Verify middleware |
+**Scope:** Functional QA mapping from UI flows to the real Flask endpoints in `app/server/app/*`.  
+**Base URL:** `${VITE_API_URL}` (example: `http://127.0.0.1:5000`)  
+**API Prefix:** All business APIs are under `/api/*` via blueprints registered in `app/__init__.py`.  
+**Auth:** JWT (access/refresh). Access token required for protected routes. Some routes require specific roles.
 
 ---
 
-## ✅ Positive Test Cases
-
-1. **Login:** Valid email/password → **200**, dashboard loads, token stored.  
-2. **Register:** Unique email → **201**, user created, login works.  
-3. **Profile:** With valid token → **200**, info displayed.  
-4. **List Opportunities:** Returns list with `items`; filters work.  
-5. **Opportunity CRUD:** **201/200/204** depending on action.  
-6. **Apply/Withdraw:** Apply returns **201**, Withdraw returns **204**.  
-7. **Admin Orgs CRUD:** Full success flow as admin.
+## Health Check (for dev sanity)
+- **GET** `/health` → `200 {"status":"ok"}` (no auth)
 
 ---
 
-## ❌ Negative Test Cases
+## Auth (`/api/auth/*`)
+Implemented in `app/auth/routes.py`.
 
-1. Invalid password → **401**, error toast.  
-2. Duplicate email → **409**, error message.  
-3. No token → **401**, redirect to login.  
-4. Non-admin → **403** on admin routes.  
-5. Fake ID → **404**, “not found” message.  
-6. Missing fields → **400**, validation errors shown.  
-7. Expired refresh → **401**, user logged out gracefully.
+| # | User Flow | HTTP | Endpoint | Auth | Request (example) | Success (status & body) | Failure |
+|---|-----------|------|----------|------|-------------------|--------------------------|---------|
+| A1 | Register | POST | `/api/auth/register` | No | `{"email":"user@x.com","password":"Passw0rd!","role":"volunteer"}` | **201** `{"user": {...}, "tokens": {"access_token":"...","refresh_token":"..."}}` | **400** missing creds, **409** email exists |
+| A2 | Login | POST | `/api/auth/login` | No | `{"email":"user@x.com","password":"Passw0rd!"}` | **200** `{"user": {...}, "tokens": {"access_token":"...","refresh_token":"..."}}` | **400/401** invalid creds |
+| A3 | Refresh access token | POST | `/api/auth/refresh` | **Refresh token required** | — | **200** `{"access_token":"...","refresh_token":"..."}` | **401** invalid/expired refresh |
 
----
-
-## ⚙️ Environment Notes
-
-- **Base URL:** Set `VITE_API_URL` in `.env`.  
-- **Auth:** Axios attaches Bearer token automatically.  
-- **Pagination/Filters:** Verify query param names (`page`, `search`, `tag`).  
-- **HTTP Methods:** Adjust `PUT`/`PATCH` if backend differs.  
-- **Withdraw Route:** Confirm if it’s `DELETE` or `POST /withdraw`.
+**Notes:**  
+- Passwords are hashed with Bcrypt.  
+- Tokens include role claim (e.g., `"role":"admin"`).
 
 ---
 
-## 🔍 Dev Helper Commands
+## Users (`/api/users/*`)
+Implemented in `app/users/routes.py`.
+
+| # | User Flow | HTTP | Endpoint | Auth | Request (example) | Success | Failure |
+|---|-----------|------|----------|-----|-------------------|---------|---------|
+| U1 | List users (admin) | GET | `/api/users/` | **Access + admin** | — | **200** `{"users":[...]}` | **403** (non-admin) |
+| U2 | Get me | GET | `/api/users/me` | **Access** | — | **200** `{"user": {...}}` | **401** no/invalid token |
+| U3 | Update me | PATCH | `/api/users/me` | **Access** | `{"name":"New Name"}` (optionally `"role"` but only admin can change roles) | **200** `{"user": {...}}` | **400/401** |
+| U4 | Get user by id | GET | `/api/users/<id>` | **Access** | — | **200** `{"user": {...}}` (self or admin) | **403** forbidden, **404** not found |
+
+**Notes:**  
+- `GET /me`/`PATCH /me` are the main profile endpoints for UI.
+
+---
+
+## Organizations (`/api/orgs/*`)
+Implemented in `app/orgs/routes.py`.
+
+| # | User Flow | HTTP | Endpoint | Auth | Request (example) | Success | Failure |
+|---|-----------|------|----------|------|-------------------|---------|---------|
+| O1 | List orgs | GET | `/api/orgs/` | Public | — | **200** `{"organizations":[...]}` | — |
+| O2 | Create org | POST | `/api/orgs/` | **Access + admin** | `{"name":"Habitat","contact_email":"hi@org.org","description":"..."}` | **201** `{"organization": {...}}` | **400/403** |
+| O3 | Retrieve org | GET | `/api/orgs/<org_id>` | Public | — | **200** `{"organization": {...}}` | **404** |
+| O4 | Update org | PATCH | `/api/orgs/<org_id>` | **Access + admin** | Any of: `"name","contact_email","description","owner_id","is_active"` | **200** `{"organization": {...}}` | **404/403** |
+
+**Notes:**  
+- No delete endpoint is defined in this diff.
+
+---
+
+## Opportunities (`/api/opportunities/*`)
+Implemented in `app/opportunities/routes.py`.
+
+| # | User Flow | HTTP | Endpoint | Auth | Request (example) | Success | Failure |
+|---|-----------|------|----------|------|-------------------|---------|---------|
+| OP1 | List opportunities | GET | `/api/opportunities/` | Public | — | **200** `{"opportunities":[...]}` | — |
+| OP2 | Create opportunity | POST | `/api/opportunities/` | **Access + role:** `organization` or `admin` | `{"title":"Beach Cleanup","description":"...","location":"NC","start_date":"2025-11-10T09:00:00","end_date":"2025-11-10T12:00:00","organization_id":1}` | **201** `{"opportunity": {...}}` | **400** missing `title`/`organization_id`, **403** role |
+| OP3 | Retrieve opportunity | GET | `/api/opportunities/<id>` | Public | — | **200** `{"opportunity": {...}}` | **404** |
+
+**Notes:**  
+- Dates are parsed via `datetime.fromisoformat`. Invalid strings become `null`.
+
+---
+
+## Applications (`/api/applications/*`)
+Implemented in `app/applications/routes.py`.
+
+| # | User Flow | HTTP | Endpoint | Auth | Request (example) | Success | Failure |
+|---|-----------|------|----------|------|-------------------|---------|---------|
+| AP1 | List all applications (admin) | GET | `/api/applications/` | **Access + admin** | — | **200** `{"applications":[...]}` | **403** |
+| AP2 | List my applications | GET | `/api/applications/my` | **Access** | — | **200** `{"applications":[...]}` | **401** |
+| AP3 | Create application | POST | `/api/applications/` | **Access** | `{"opportunity_id": 123}` | **201** `{"application": {...}}` | **400** missing `opportunity_id`, **409** duplicate |
+| AP4 | Update application status | PATCH | `/api/applications/<id>` | **Access + role:** `admin` or `organization` | `{"status":"approved"}` (or other valid statuses) | **200** `{"application": {...}}` | **404** not found, **403** role |
+
+**Notes:**  
+- There is **no withdraw/delete endpoint** in this diff; volunteers cannot delete applications via API here.  
+- Duplicate submissions return **409**.
+
+---
+
+## Frontend Mapping (what to test in UI)
+
+| UI Area (example) | Intent | Method → Endpoint | Auth/Role | Expected Result |
+|---|---|---|---|---|
+| Login page | Sign in | **POST** `/api/auth/login` | none | 200 + tokens; redirect to dashboard |
+| Register page | Create account | **POST** `/api/auth/register` | none | 201 + tokens (or prompt to login) |
+| Token handling | Refresh token | **POST** `/api/auth/refresh` | refresh | New access token; retried request succeeds |
+| Profile page | View “Me” | **GET** `/api/users/me` | access | 200 user payload renders |
+| Edit profile | Update “Me” | **PATCH** `/api/users/me` | access | 200 updated user, toast shown |
+| Admin → Users | List users | **GET** `/api/users/` | access + admin | 200 list of users |
+| Orgs list | Browse | **GET** `/api/orgs/` | public | 200 list of orgs |
+| Orgs detail | View | **GET** `/api/orgs/{id}` | public | 200 org detail |
+| Admin → New Org | Create | **POST** `/api/orgs/` | access + admin | 201 org; shows in list |
+| Admin → Edit Org | Update | **PATCH** `/api/orgs/{id}` | access + admin | 200 updated org |
+| Opps list | Browse | **GET** `/api/opportunities/` | public | 200 list of opportunities |
+| Opps detail | View | **GET** `/api/opportunities/{id}` | public | 200 detail |
+| Org/Admin → New Opp | Create | **POST** `/api/opportunities/` | access + org/admin | 201 opportunity |
+| My Applications | List mine | **GET** `/api/applications/my` | access | 200 list of my applications |
+| Apply CTA | Apply | **POST** `/api/applications/` | access | 201 application; CTA/state updates |
+| Admin/Org → Review App | Update status | **PATCH** `/api/applications/{id}` | access + admin/org | 200 application with new status |
+
+---
+
+## Positive Test Cases (Happy Paths)
+
+1. **Register → Login → Profile:** register (**201**), login (**200**), then `GET /users/me` (**200**).  
+2. **Orgs CRUD (admin):** list (**200**), create (**201**), update (**200**), retrieve (**200**).  
+3. **Opportunities:** list (**200**), create as org/admin (**201**), retrieve (**200**).  
+4. **Applications:** apply (**201**) then see in `GET /applications/my` (**200**).  
+5. **Token Refresh:** call a protected route after access token expiry → interceptor refreshes (**200**) and retries OK.
+
+---
+
+## Negative / Edge Cases
+
+- **Auth:** wrong password → **401**; missing tokens on protected routes → **401**.  
+- **Role:** non-admin hitting `/api/users/` or POST `/api/orgs/` → **403**.  
+- **Validation:** creating org with empty name → **400**.  
+- **Duplicate:** applying to the same opportunity twice → **409**.  
+- **Not Found:** retrieving non-existent user/org/opportunity/application → **404**.
+
+---
+
+## Quick cURL Smoke Tests
 
 ```bash
-# Find frontend API calls
-rg -n "axios|fetch\\(" src
+# Health
+curl -s http://127.0.0.1:5000/health
 
-# Find backend routes (Flask or Express)
-rg -n "route\\(|router\\.(get|post|put|patch|delete)\\(" server api app backend
+# Register (adjust email to avoid 409)
+curl -sX POST http://127.0.0.1:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"qa1@example.com","password":"Passw0rd!","role":"volunteer"}'
+
+# Login
+TOKENS=$(curl -sX POST http://127.0.0.1:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"qa1@example.com","password":"Passw0rd!"}')
+ACCESS=$(echo "$TOKENS" | python -c 'import sys,json; print(json.load(sys.stdin)["tokens"]["access_token"])')
+
+# Me
+curl -sH "Authorization: Bearer $ACCESS" http://127.0.0.1:5000/api/users/me
+
+# Public orgs list
+curl -s http://127.0.0.1:5000/api/orgs/
+
+# My applications
+curl -sH "Authorization: Bearer $ACCESS" http://127.0.0.1:5000/api/applications/my
