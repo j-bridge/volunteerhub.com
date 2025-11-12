@@ -1,7 +1,7 @@
 import os
 from typing import Iterable
-
 from flask import Flask, jsonify
+from dotenv import load_dotenv
 
 from .config import get_config
 from .extensions import bcrypt, cors, db, jwt, ma, migrate
@@ -13,15 +13,21 @@ from .orgs import orgs_bp
 
 
 def create_app(config_name: str | None = None) -> Flask:
-    """Application factory used by the Flask CLI and WSGI servers."""
+    load_dotenv()
+    
+    instance_path = os.path.join(os.path.dirname(__file__), "instance")
+    os.makedirs(os.path.join(os.path.dirname(__file__), "instance"), exist_ok=True)
+
     app = Flask(__name__, instance_relative_config=True)
+
     config_obj = get_config(config_name)
     app.config.from_object(config_obj)
 
-    os.makedirs(app.instance_path, exist_ok=True)
-    instance_config = os.path.join(app.instance_path, "config.py")
-    if os.path.exists(instance_config):
+    instance_config_file = os.path.join(app.instance_path, "config.py")
+    if os.path.exists(instance_config_file):
         app.config.from_pyfile("config.py", silent=True)
+
+    print("DB URI:", app.config["SQLALCHEMY_DATABASE_URI"])
 
     register_extensions(app)
     register_blueprints(app)
@@ -58,11 +64,11 @@ def register_blueprints(app: Flask) -> None:
 
 def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(404)
-    def handle_not_found(error):  # type: ignore[override]
+    def handle_not_found(error):  
         return jsonify({"error": "Not Found"}), 404
 
     @app.errorhandler(500)
-    def handle_internal_error(error):  # type: ignore[override]
+    def handle_internal_error(error):
         return jsonify({"error": "Internal Server Error"}), 500
 
 
