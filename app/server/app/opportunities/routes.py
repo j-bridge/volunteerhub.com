@@ -1,12 +1,9 @@
 from datetime import datetime
-
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from sqlalchemy import select
-
 from ..extensions import db
 from ..models import Opportunity
-from ..permissions import role_required
+from ..permissions import org_admin_or_site_admin_required
 from ..schemas import OpportunitySchema
 
 bp = Blueprint("opportunities", __name__)
@@ -16,51 +13,70 @@ opportunities_schema = OpportunitySchema(many=True)
 
 @bp.get("/")
 def list_opportunities():
-    statement = select(Opportunity).order_by(Opportunity.created_at.desc())
-    opportunities = db.session.execute(statement).scalars().all()
+    location = request.args.get("location")
+    org_id = request.args.get("org_id")
+    opportunities = Opportunity.filter_by_criteria(location=location, org_id=org_id)
     return jsonify({"opportunities": opportunities_schema.dump(opportunities)})
+
+
+@bp.get("/<int:opportunity_id>")
+def get_opportunity(opportunity_id):
+    opp = db.session.get(Opportunity, opportunity_id)
+    if not opp:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify({"opportunity": opportunity_schema.dump(opp)})
 
 
 @bp.post("/")
 @jwt_required()
-@role_required("organization", "admin")
+@org_admin_or_site_admin_required("org_id")
 def create_opportunity():
-    payload = request.get_json(silent=True) or {}
-    title = (payload.get("title") or "").strip()
+    data = request.get_json() or {}
+    title = data.get("title", "").strip()
     if not title:
-        return jsonify({"error": "Title is required"}), 400
+        return jsonify({"error": "Title required"}), 400
 
-    org_id = payload.get("org_id") or payload.get("organization_id")
-    if org_id is None:
-        return jsonify({"error": "organization_id is required"}), 400
-
-    opportunity = Opportunity(
+    opp = Opportunity(
         title=title,
-        description=payload.get("description"),
-        location=payload.get("location"),
-        start_date=_parse_datetime(payload.get("start_date")),
-        end_date=_parse_datetime(payload.get("end_date")),
-        org_id=org_id,
+        description=data.get("description"),
+        location=data.get("location"),
+        start_date=_parse_datetime(data.get("start_date")),
+        end_date=_parse_datetime(data.get("end_date")),
+        org_id=data.get("org_id"),
     )
-    db.session.add(opportunity)
+    db.session.add(opp)
     db.session.commit()
-    return jsonify({"opportunity": opportunity_schema.dump(opportunity)}), 201
+    return jsonify({"opportunity": opportunity_schema.dump(opp)}), 201
 
 
-@bp.get("/<int:opportunity_id>")
-def retrieve_opportunity(opportunity_id: int):
-    opportunity = db.session.get(Opportunity, opportunity_id)
-    if not opportunity:
-        return jsonify({"error": "Opportunity not found"}), 404
-    return jsonify({"opportunity": opportunity_schema.dump(opportunity)})
+@bp.patch("/<int:opportunity_id>")
+@jwt_required()
+@org_admin_or_site_admin_required()
+def update_opportunity(opportunity_id):
+    opp = db.session.get(Opportunity, opportunity_id)
+    if not opp:
+        return jsonify({"error": "Not found"}), 404
+    data = request.get_json() or {}
+    opp.update_details(**data)
+    return jsonify({"opportunity": opportunity_schema.dump(opp)})
+
+
+@bp.delete("/<int:opportunity_id>")
+@jwt_required()
+@org_admin_or_site_admin_required()
+def delete_opportunity(opportunity_id):
+    opp = db.session.get(Opportunity, opportunity_id)
+    if not opp:
+        return jsonify({"error": "Not found"}), 404
+    db.session.delete(opp)
+    db.session.commit()
+    return jsonify({"message": "Opportunity deleted"}), 200
 
 
 def _parse_datetime(value):
     if not value:
         return None
-    if isinstance(value, datetime):
-        return value
     try:
         return datetime.fromisoformat(value)
-    except ValueError:
+    except Exception:
         return None

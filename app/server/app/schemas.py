@@ -33,6 +33,10 @@ class OpportunitySchema(BaseSchema):
 
 
 class ApplicationSchema(BaseSchema):
+    reviewed_at = fields.DateTime(dump_only=True)
+    reviewed_by = fields.Integer(dump_only=True)
+    review_note = fields.String(dump_only=True)
+
     class Meta(BaseSchema.Meta):
         model = Application
         include_relationships = False
