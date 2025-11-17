@@ -1,10 +1,8 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from sqlalchemy import select
-
 from ..extensions import db
 from ..models import Application
-from ..permissions import role_required
+from ..permissions import organization_required
 from ..schemas import ApplicationSchema
 
 bp = Blueprint("applications", __name__)
@@ -12,57 +10,58 @@ application_schema = ApplicationSchema()
 applications_schema = ApplicationSchema(many=True)
 
 
-@bp.get("/")
-@jwt_required()
-@role_required("admin")
-def list_applications():
-    statement = select(Application).order_by(Application.created_at.desc())
-    applications = db.session.execute(statement).scalars().all()
-    return jsonify({"applications": applications_schema.dump(applications)})
-
-
 @bp.get("/my")
 @jwt_required()
-def list_my_applications():
+def my_applications():
     user_id = get_jwt_identity()
-    statement = select(Application).filter_by(user_id=user_id).order_by(Application.created_at.desc())
-    applications = db.session.execute(statement).scalars().all()
-    return jsonify({"applications": applications_schema.dump(applications)})
+    apps = Application.query.filter_by(user_id=user_id).order_by(Application.created_at.desc()).all()
+    return jsonify({"applications": applications_schema.dump(apps)})
 
 
 @bp.post("/")
 @jwt_required()
 def create_application():
-    payload = request.get_json(silent=True) or {}
-    opportunity_id = payload.get("opportunity_id")
-    if not opportunity_id:
-        return jsonify({"error": "opportunity_id is required"}), 400
-
+    data = request.get_json() or {}
     user_id = get_jwt_identity()
-    existing = db.session.execute(
-        select(Application).filter_by(user_id=user_id, opportunity_id=opportunity_id)
-    ).scalar_one_or_none()
+    opp_id = data.get("opportunity_id")
+    if not opp_id:
+        return jsonify({"error": "opportunity_id required"}), 400
+
+    existing = Application.query.filter_by(user_id=user_id, opportunity_id=opp_id).first()
     if existing:
-        return jsonify({"error": "Application already submitted"}), 409
+        return jsonify({"error": "Application already exists"}), 409
 
-    application = Application(user_id=user_id, opportunity_id=opportunity_id)
-    db.session.add(application)
+    app = Application(user_id=user_id, opportunity_id=opp_id)
+    db.session.add(app)
     db.session.commit()
-    return jsonify({"application": application_schema.dump(application)}), 201
+    return jsonify({"application": application_schema.dump(app)}), 201
 
 
-@bp.patch("/<int:application_id>")
+@bp.patch("/<int:application_id>/review")
 @jwt_required()
-@role_required("admin", "organization")
-def update_application(application_id: int):
-    application = db.session.get(Application, application_id)
-    if not application:
-        return jsonify({"error": "Application not found"}), 404
+@organization_required
+def review_application(application_id):
+    data = request.get_json() or {}
+    decision = data.get("decision")
+    app = db.session.get(Application, application_id)
+    if not app:
+        return jsonify({"error": "Not found"}), 404
+    try:
+        app.review(decision)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"application": application_schema.dump(app)})
 
-    payload = request.get_json(silent=True) or {}
-    status = payload.get("status")
-    if status:
-        application.status = status
 
-    db.session.commit()
-    return jsonify({"application": application_schema.dump(application)})
+@bp.patch("/<int:application_id>/withdraw")
+@jwt_required()
+def withdraw_application(application_id):
+    user_id = get_jwt_identity()
+    app = Application.query.filter_by(id=application_id, user_id=user_id).first()
+    if not app:
+        return jsonify({"error": "Not found"}), 404
+    try:
+        app.withdraw()
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"application": application_schema.dump(app)})
