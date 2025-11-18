@@ -1,72 +1,213 @@
 // app/client/src/pages/Opportunities/Opportunities.jsx
-import { useMemo, useState } from "react";
+
+import React, { useMemo, useState } from "react";
 import {
-  Container,
+  Box,
   Heading,
-  SimpleGrid,
+  Text,
   Stack,
+  SimpleGrid,
+  HStack,
   Input,
   Select,
+  Button,
+  useColorModeValue,
 } from "@chakra-ui/react";
-import OpportunityCard from "./OpportunityCard.jsx";
-import { opportunities } from "../../mock/opportunities.js";
+import OpportunityCard from "./OpportunityCard";
 
-export default function Opportunities() {
-  const [q, setQ] = useState("");
-  const [category, setCategory] = useState("");
-  const [location, setLocation] = useState("");
+const mockOpportunities = [
+  {
+    id: 1,
+    title: "Community Food Drive",
+    organization: "Boca Community Outreach",
+    date: "2025-11-20",
+    location: "Boca Raton, FL",
+    category: "Community",
+    description:
+      "Help sort, pack, and distribute food to local families in need. Great for first-time volunteers and groups.",
+  },
+  {
+    id: 2,
+    title: "Beach Cleanup Day",
+    organization: "Coastal Care Alliance",
+    date: "2025-11-23",
+    location: "Deerfield Beach, FL",
+    category: "Environment",
+    description:
+      "Join volunteers to remove litter from the shoreline and help protect local wildlife and marine ecosystems.",
+  },
+  {
+    id: 3,
+    title: "After-School Tutoring",
+    organization: "Bright Futures Youth Center",
+    date: "2025-12-01",
+    location: "Fort Lauderdale, FL",
+    category: "Education",
+    description:
+      "Provide homework help and mentorship to middle school students in math, reading, and science.",
+  },
+  {
+    id: 4,
+    title: "Holiday Toy Sorting",
+    organization: "Hope for Kids Foundation",
+    date: "2025-12-05",
+    location: "Boca Raton, FL",
+    category: "Community",
+    description:
+      "Sort and organize donated toys for families ahead of the holiday distribution event.",
+  },
+];
 
-  const filtered = useMemo(() => {
-    return opportunities.filter((o) => {
-      const matchesQ = q
-        ? (o.title + o.org + o.description)
-            .toLowerCase()
-            .includes(q.toLowerCase())
-        : true;
+const Opportunities = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState("all");
+  const [location, setLocation] = useState("all");
+  const [dateRange, setDateRange] = useState("all");
 
-      const matchesCat = category ? o.category === category : true;
+  const pageBg = useColorModeValue("gray.50", "gray.900");
 
-      const matchesLoc = location
-        ? o.location.toLowerCase().includes(location.toLowerCase())
-        : true;
+  const filteredOpportunities = useMemo(() => {
+    const now = new Date();
 
-      return matchesQ && matchesCat && matchesLoc;
+    return mockOpportunities.filter((opp) => {
+      const matchesSearch =
+        searchTerm.trim().length === 0 ||
+        opp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        opp.organization.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategory = category === "all" || opp.category === category;
+      const matchesLocation = location === "all" || opp.location === location;
+
+      let matchesDate = true;
+      const oppDate = new Date(opp.date);
+
+      if (dateRange === "upcoming") {
+        matchesDate = oppDate >= now;
+      } else if (dateRange === "thisMonth") {
+        matchesDate =
+          oppDate.getMonth() === now.getMonth() &&
+          oppDate.getFullYear() === now.getFullYear();
+      }
+
+      return matchesSearch && matchesCategory && matchesLocation && matchesDate;
     });
-  }, [q, category, location]);
+  }, [searchTerm, category, location, dateRange]);
+
+  const handleView = (opp) => {
+    // Later you can navigate to /opportunities/:id
+    console.log("View clicked:", opp);
+  };
+
+  const handleApply = (opp) => {
+    // Later you can open application form / modal / external link
+    console.log("Apply clicked:", opp);
+  };
+
+  const uniqueLocations = Array.from(
+    new Set(mockOpportunities.map((o) => o.location))
+  );
 
   return (
-    <Container maxW="6xl" py={10}>
-      <Stack spacing={6}>
-        <Heading size="2xl">Discover Opportunities</Heading>
-
-        <Stack direction={{ base: "column", md: "row" }} spacing={4}>
-          <Input
-            placeholder="Search by title or organization"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <Select
-            placeholder="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="Community">Community</option>
-            <option value="Environment">Environment</option>
-            <option value="Education">Education</option>
-          </Select>
-          <Input
-            placeholder="Location (e.g., Boca Raton)"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          />
+    <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }} px={{ base: 4, md: 10 }}>
+      <Box maxW="6xl" mx="auto">
+        {/* Header */}
+        <Stack spacing={4} mb={8}>
+          <Heading size="2xl">Explore Opportunities</Heading>
+          <Text fontSize="lg" color="gray.600">
+            Browse upcoming volunteer events and programs. Use the filters to
+            narrow down by category, location, and date.
+          </Text>
         </Stack>
 
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
-          {filtered.map((item) => (
-            <OpportunityCard key={item.id} item={item} onView={() => {}} />
-          ))}
-        </SimpleGrid>
-      </Stack>
-    </Container>
+        {/* Filters */}
+        <Box
+          mb={8}
+          p={4}
+          borderRadius="2xl"
+          bg={useColorModeValue("white", "gray.800")}
+          boxShadow="sm"
+        >
+          <Stack spacing={{ base: 4, md: 3 }}>
+            <Input
+              placeholder="Search by title or organization"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+
+            <HStack spacing={3} flexWrap="wrap">
+              <Select
+                maxW={{ base: "100%", md: "200px" }}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="all">All categories</option>
+                <option value="Community">Community</option>
+                <option value="Environment">Environment</option>
+                <option value="Education">Education</option>
+              </Select>
+
+              <Select
+                maxW={{ base: "100%", md: "240px" }}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              >
+                <option value="all">All locations</option>
+                {uniqueLocations.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </Select>
+
+              <Select
+                maxW={{ base: "100%", md: "220px" }}
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+              >
+                <option value="all">Any date</option>
+                <option value="upcoming">Upcoming only</option>
+                <option value="thisMonth">This month</option>
+              </Select>
+
+              <Button
+                variant="outline"
+                ml={{ base: 0, md: "auto" }}
+                onClick={() => {
+                  setSearchTerm("");
+                  setCategory("all");
+                  setLocation("all");
+                  setDateRange("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </HStack>
+          </Stack>
+        </Box>
+
+        {/* Opportunities grid */}
+        {filteredOpportunities.length === 0 ? (
+          <Text color="gray.500">No opportunities match your filters yet.</Text>
+        ) : (
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+            {filteredOpportunities.map((opp) => (
+              <OpportunityCard
+                key={opp.id}
+                title={opp.title}
+                organization={opp.organization}
+                date={new Date(opp.date).toLocaleDateString()}
+                location={opp.location}
+                category={opp.category}
+                description={opp.description}
+                onView={() => handleView(opp)}
+                onApply={() => handleApply(opp)}
+              />
+            ))}
+          </SimpleGrid>
+        )}
+      </Box>
+    </Box>
   );
-}
+};
+
+export default Opportunities;

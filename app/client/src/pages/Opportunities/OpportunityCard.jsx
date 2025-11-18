@@ -1,43 +1,76 @@
 // app/client/src/pages/Opportunities/OpportunityCard.jsx
+
+import React from "react";
 import {
   Box,
   Heading,
   Text,
   Stack,
+  HStack,
+  Tag,
   Button,
   Badge,
+  useColorModeValue,
 } from "@chakra-ui/react";
 
-export default function OpportunityCard({ item, onView }) {
+const OpportunityCard = ({
+  title,
+  organization,
+  date,
+  location,
+  category,
+  description,
+  onView,
+  onApply,
+}) => {
+  const cardBg = useColorModeValue("white", "gray.800");
+
   return (
     <Box
-      bg="white"
+      bg={cardBg}
+      borderRadius="2xl"
       p={6}
-      rounded="2xl"
-      shadow="md"
-      _hover={{ shadow: "lg" }}
-      transition="box-shadow .2s"
+      boxShadow="sm"
+      borderWidth="1px"
+      borderColor={useColorModeValue("gray.200", "gray.700")}
     >
       <Stack spacing={3}>
-        <Stack direction="row" align="center" justify="space-between">
-          <Heading size="md">{item.title}</Heading>
-          <Badge colorScheme="teal">{item.category}</Badge>
-        </Stack>
+        <HStack justify="space-between" align="flex-start">
+          <Box>
+            <Heading size="md" mb={1}>
+              {title}
+            </Heading>
+            <Text fontSize="sm" color="gray.600">
+              {organization}
+            </Text>
+          </Box>
+          {category && (
+            <Tag size="sm" variant="subtle">
+              {category}
+            </Tag>
+          )}
+        </HStack>
 
-        <Text color="gray.700">{item.org}</Text>
-        <Text color="gray.500" fontSize="sm">
-          {item.location} • {new Date(item.date).toLocaleDateString()}
+        <HStack spacing={4} fontSize="sm" color="gray.600">
+          <Badge variant="subtle">{location}</Badge>
+          <Text>{date}</Text>
+        </HStack>
+
+        <Text fontSize="sm" color="gray.700" noOfLines={3}>
+          {description}
         </Text>
 
-        <Text color="gray.600">{item.description}</Text>
-
-        <Stack direction={{ base: "column", sm: "row" }}>
-          <Button variant="outline" onClick={() => onView?.(item)}>
+        <HStack spacing={3} pt={2}>
+          <Button size="sm" onClick={onView}>
             View
           </Button>
-          <Button colorScheme="teal">Apply</Button>
-        </Stack>
+          <Button size="sm" variant="outline" onClick={onApply}>
+            Apply
+          </Button>
+        </HStack>
       </Stack>
     </Box>
   );
-}
+};
+
+export default OpportunityCard;
