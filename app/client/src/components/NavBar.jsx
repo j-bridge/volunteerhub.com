@@ -12,7 +12,17 @@ export default function NavBar() {
   };
 
   return (
-    <Box as="nav" w="100%" bg="white" boxShadow="sm" px={8} py={4} position="sticky" top="0" zIndex="1000">
+    <Box
+      as="nav"
+      w="100%"
+      bg="white"
+      boxShadow="sm"
+      px={8}
+      py={4}
+      position="sticky"
+      top="0"
+      zIndex="1000"
+    >
       <Flex align="center">
         {/* Logo acts as Home */}
         <Link as={RouterLink} to="/" _hover={{ textDecoration: "none" }}>
@@ -23,11 +33,24 @@ export default function NavBar() {
 
         <Spacer />
 
-        {/* Primary nav links (hide "Home") */}
-        <HStack spacing={6} display={{ base: "none", md: "flex" }}>
-          <Link as={RouterLink} to="/opportunities" fontWeight="500">Opportunities</Link>
-          <Link as={RouterLink} to="/about" fontWeight="500">About</Link>
-          <Link as={RouterLink} to="/contact" fontWeight="500">Contact</Link>
+        {/* Primary nav links */}
+        <HStack spacing={5} display={{ base: "none", md: "flex" }}> align="center">
+          <Link as={RouterLink} to="/opportunities" fontWeight="500">
+            Opportunities
+          </Link>
+          <Link as={RouterLink} to="/about" fontWeight="500">
+            About
+          </Link>
+          <Link as={RouterLink} to="/contact" fontWeight="500">
+            Contact
+          </Link>
+
+          {/* Dashboard links (always visible) */}
+          <Link as={RouterLink} to="/dashboard" fontWeight="500">
+            My Dashboard
+          </Link>
+
+
         </HStack>
 
         <Spacer />
@@ -35,14 +58,27 @@ export default function NavBar() {
         {/* Auth-aware actions */}
         {user ? (
           <HStack spacing={4}>
-            <Text fontSize="sm" color="gray.600">Hello, {user?.name || user?.email || "Volunteer"}</Text>
-            <Button onClick={handleLogout} colorScheme="teal" variant="outline" size="sm">
+            <Text fontSize="sm" color="gray.600">
+              Hello, {user?.name || user?.email || "Volunteer"}
+            </Text>
+            <Button
+              onClick={handleLogout}
+              colorScheme="teal"
+              variant="outline"
+              size="sm"
+            >
               Log out
             </Button>
           </HStack>
         ) : (
           <HStack spacing={4}>
-            <Button as={RouterLink} to="/login" colorScheme="teal" variant="outline" size="sm">
+            <Button
+              as={RouterLink}
+              to="/login"
+              colorScheme="teal"
+              variant="outline"
+              size="sm"
+            >
               Log In
             </Button>
             <Button as={RouterLink} to="/signup" colorScheme="teal" size="sm">
