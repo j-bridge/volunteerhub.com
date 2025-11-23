@@ -1,4 +1,5 @@
 // app/client/src/pages/Opportunities/Opportunities.jsx
+import { opportunities as mockOpportunities } from "../../mock/opportunities";
 
 import React, { useMemo, useState } from "react";
 import {
@@ -14,49 +15,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import OpportunityCard from "./OpportunityCard";
-
-const mockOpportunities = [
-  {
-    id: 1,
-    title: "Community Food Drive",
-    organization: "Boca Community Outreach",
-    date: "2025-11-20",
-    location: "Boca Raton, FL",
-    category: "Community",
-    description:
-      "Help sort, pack, and distribute food to local families in need. Great for first-time volunteers and groups.",
-  },
-  {
-    id: 2,
-    title: "Beach Cleanup Day",
-    organization: "Coastal Care Alliance",
-    date: "2025-11-23",
-    location: "Deerfield Beach, FL",
-    category: "Environment",
-    description:
-      "Join volunteers to remove litter from the shoreline and help protect local wildlife and marine ecosystems.",
-  },
-  {
-    id: 3,
-    title: "After-School Tutoring",
-    organization: "Bright Futures Youth Center",
-    date: "2025-12-01",
-    location: "Fort Lauderdale, FL",
-    category: "Education",
-    description:
-      "Provide homework help and mentorship to middle school students in math, reading, and science.",
-  },
-  {
-    id: 4,
-    title: "Holiday Toy Sorting",
-    organization: "Hope for Kids Foundation",
-    date: "2025-12-05",
-    location: "Boca Raton, FL",
-    category: "Community",
-    description:
-      "Sort and organize donated toys for families ahead of the holiday distribution event.",
-  },
-];
+import { useNavigate } from "react-router-dom";   // ⬅️ NEW IMPORT
 
 const Opportunities = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,6 +24,7 @@ const Opportunities = () => {
   const [dateRange, setDateRange] = useState("all");
 
   const pageBg = useColorModeValue("gray.50", "gray.900");
+  const navigate = useNavigate();                  // ⬅️ NEW HOOK
 
   const filteredOpportunities = useMemo(() => {
     const now = new Date();
@@ -94,12 +54,11 @@ const Opportunities = () => {
   }, [searchTerm, category, location, dateRange]);
 
   const handleView = (opp) => {
-    // Later you can navigate to /opportunities/:id
-    console.log("View clicked:", opp);
+    // Navigate to the full detail page
+    navigate(`/opportunities/${opp.id}`);        // ⬅️ UPDATED
   };
 
   const handleApply = (opp) => {
-    // Later you can open application form / modal / external link
     console.log("Apply clicked:", opp);
   };
 
@@ -199,7 +158,7 @@ const Opportunities = () => {
                 location={opp.location}
                 category={opp.category}
                 description={opp.description}
-                onView={() => handleView(opp)}
+                onView={() => handleView(opp)}  // ⬅️ Now navigates correctly
                 onApply={() => handleApply(opp)}
               />
             ))}

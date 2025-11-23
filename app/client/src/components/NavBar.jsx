@@ -34,7 +34,7 @@ export default function NavBar() {
         <Spacer />
 
         {/* Primary nav links */}
-        <HStack spacing={5} display={{ base: "none", md: "flex" }}> align="center">
+        <HStack spacing={5} display={{ base: "none", md: "flex" }}> align="center"
           <Link as={RouterLink} to="/opportunities" fontWeight="500">
             Opportunities
           </Link>
