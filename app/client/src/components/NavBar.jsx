@@ -34,7 +34,11 @@ export default function NavBar() {
         <Spacer />
 
         {/* Primary nav links */}
-        <HStack spacing={5} display={{ base: "none", md: "flex" }}> align="center"
+        <HStack
+          spacing={5}
+          display={{ base: "none", md: "flex" }}
+          align="center"
+        >
           <Link as={RouterLink} to="/opportunities" fontWeight="500">
             Opportunities
           </Link>
@@ -45,12 +49,20 @@ export default function NavBar() {
             Contact
           </Link>
 
-          {/* Dashboard links (always visible) */}
-          <Link as={RouterLink} to="/dashboard" fontWeight="500">
-            My Dashboard
-          </Link>
-
-
+          {/* Only show My Dashboard when logged in */}
+          {user && (
+            <Link
+              as={RouterLink}
+              to={
+                user.role === "organization"
+                  ? "/org/dashboard"
+                  : "/dashboard"
+              }
+              fontWeight="500"
+            >
+              My Dashboard
+            </Link>
+          )}
         </HStack>
 
         <Spacer />

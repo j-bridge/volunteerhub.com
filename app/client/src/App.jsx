@@ -13,6 +13,7 @@ import About from "./pages/static/about.jsx";
 // Opportunities
 import Opportunities from "./pages/Opportunities/Opportunities.jsx";
 import OpportunityDetails from "./pages/Opportunities/OpportunityDetails.jsx";
+import CreateOpportunity from "./pages/Opportunities/CreateOpportunity.jsx"; // ⬅️ NEW
 
 // Dashboards
 import VolunteerDashboard from "./pages/dashboard/VolunteerDashboard.jsx";
@@ -46,15 +47,17 @@ export default function App() {
           <Route path="dashboard" element={<VolunteerDashboard />} />
         </Route>
 
-        {/* Organization dashboard (must be logged in, role "organization") */}
+        {/* Organization routes (must be logged in, role "organization") */}
         <Route element={<ProtectedRoute requiredRole="organization" />}>
           <Route path="org/dashboard" element={<OrgDashboard />} />
+          <Route path="org/opportunities/new" element={<CreateOpportunity />} /> {/* ⬅️ NEW */}
         </Route>
 
       </Route>
     </Routes>
   );
 }
+
 
 
 

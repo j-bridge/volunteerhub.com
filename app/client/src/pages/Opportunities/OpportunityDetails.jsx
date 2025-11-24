@@ -9,18 +9,52 @@ import {
   Badge,
   Button,
   useColorModeValue,
+  useToast,
 } from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { opportunities } from "../../mock/opportunities";
+import { useAuth } from "../../context/AuthContext";
 
 export default function OpportunityDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const toast = useToast();
+
   const pageBg = useColorModeValue("gray.50", "gray.900");
   const cardBg = useColorModeValue("white", "gray.800");
 
-  // Find the opportunity by id (string compare for safety)
   const opportunity = opportunities.find((o) => String(o.id) === String(id));
+
+  const handleApply = () => {
+  if (!user) {
+    navigate("/login", { state: { fromApply: true } });
+    return;
+  }
+
+  if (user.role !== "volunteer") {
+    toast({
+      title: "Volunteer account required",
+      description:
+        "Only volunteer accounts can apply for opportunities. Please sign in with a volunteer account or create one.",
+      status: "warning",
+      duration: 4000,
+      isClosable: true,
+    });
+    return;
+  }
+
+  console.log("Apply from details (volunteer):", opportunity);
+  toast({
+    title: "Application coming soon",
+    description:
+      "The application flow will be available once the backend is connected.",
+    status: "success",
+    duration: 3000,
+    isClosable: true,
+  });
+};
+
 
   if (!opportunity) {
     return (
@@ -93,7 +127,7 @@ export default function OpportunityDetails() {
             </Text>
 
             <HStack spacing={3} pt={4}>
-              <Button colorScheme="teal" onClick={() => console.log("Apply")}>
+              <Button colorScheme="teal" onClick={handleApply}>
                 Apply
               </Button>
               <Button variant="outline" onClick={() => console.log("Save")}>
@@ -106,3 +140,4 @@ export default function OpportunityDetails() {
     </Box>
   );
 }
+

@@ -23,9 +23,11 @@ export function AuthProvider({ children }) {
       if (userJson) {
         setUser(JSON.parse(userJson));
       }
+
     } catch {}
     setReady(true);
   }, []);
+
 
   const login = (token, userData, remember = true) => {
     const store = remember ? localStorage : sessionStorage;
