@@ -12,6 +12,9 @@ import {
   FormControl,
   FormLabel,
   FormErrorMessage,
+  RadioGroup,
+  Radio,
+  HStack,
 } from "@chakra-ui/react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
@@ -19,6 +22,7 @@ import { api } from "../api/client";
 export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("volunteer"); // ⬅️ NEW: default to volunteer
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const toast = useToast();
@@ -30,10 +34,10 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !role) {
       toast({
         title: "Missing fields",
-        description: "Please fill out name, email, and password.",
+        description: "Please fill out name, email, password, and account type.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -53,7 +57,14 @@ export default function Signup() {
 
     setSubmitting(true);
     try {
-      const res = await api.post("/auth/register", { name, email, password });
+      // ⬇️ IMPORTANT: role is now sent to backend
+      const res = await api.post("/auth/register", {
+        name,
+        email,
+        password,
+        role, // "volunteer" or "organization"
+      });
+
       const data = res.data || {};
 
       if (res.status >= 200 && res.status < 300) {
@@ -68,6 +79,7 @@ export default function Signup() {
         setName("");
         setEmail("");
         setPassword("");
+        setRole("volunteer");
         navigate("/login");
       } else {
         throw new Error(data?.message || "Signup failed");
@@ -129,6 +141,20 @@ export default function Signup() {
               <FormErrorMessage>Enter a valid email address.</FormErrorMessage>
             </FormControl>
 
+            {/* NEW: Account type (role) selection */}
+            <FormControl isRequired>
+              <FormLabel>Account Type</FormLabel>
+              <RadioGroup
+                value={role}
+                onChange={(next) => setRole(next)}
+              >
+                <HStack spacing={6}>
+                  <Radio value="volunteer">Volunteer</Radio>
+                  <Radio value="organization">Organization</Radio>
+                </HStack>
+              </RadioGroup>
+            </FormControl>
+
             <FormControl
               isRequired
               isInvalid={!passwordValid && password.length > 0}
@@ -159,7 +185,12 @@ export default function Signup() {
 
         <Text mt={4} textAlign="center">
           Already have an account?{" "}
-          <Link as={RouterLink} to="/login" color="teal.500" fontWeight="semibold">
+          <Link
+            as={RouterLink}
+            to="/login"
+            color="teal.500"
+            fontWeight="semibold"
+          >
             Log in
           </Link>
         </Text>

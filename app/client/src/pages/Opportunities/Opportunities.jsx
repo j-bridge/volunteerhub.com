@@ -1,4 +1,3 @@
-// app/client/src/pages/Opportunities/Opportunities.jsx
 import { opportunities as mockOpportunities } from "../../mock/opportunities";
 
 import React, { useMemo, useState } from "react";
@@ -13,9 +12,11 @@ import {
   Select,
   Button,
   useColorModeValue,
+  useToast,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import OpportunityCard from "./OpportunityCard";
-import { useNavigate } from "react-router-dom";   // ⬅️ NEW IMPORT
+import { useAuth } from "../../context/AuthContext";
 
 const Opportunities = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,7 +25,9 @@ const Opportunities = () => {
   const [dateRange, setDateRange] = useState("all");
 
   const pageBg = useColorModeValue("gray.50", "gray.900");
-  const navigate = useNavigate();                  // ⬅️ NEW HOOK
+  const toast = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const filteredOpportunities = useMemo(() => {
     const now = new Date();
@@ -53,14 +56,43 @@ const Opportunities = () => {
     });
   }, [searchTerm, category, location, dateRange]);
 
-  const handleView = (opp) => {
-    // Navigate to the full detail page
-    navigate(`/opportunities/${opp.id}`);        // ⬅️ UPDATED
-  };
+ const handleView = (opp) => {
+  navigate(`/opportunities/${opp.id}`);
+};
 
-  const handleApply = (opp) => {
-    console.log("Apply clicked:", opp);
-  };
+
+ const handleApply = (opp) => {
+  // Not logged in → send them to login and let Login show the message
+  if (!user) {
+    navigate("/login", { state: { fromApply: true } });
+    return;
+  }
+
+  // Logged in, but not a volunteer
+  if (user.role !== "volunteer") {
+    toast({
+      title: "Volunteer account required",
+      description:
+        "Only volunteer accounts can apply for opportunities. Please sign in with a volunteer account or create one.",
+      status: "warning",
+      duration: 4000,
+      isClosable: true,
+    });
+    return;
+  }
+
+  // Logged-in volunteer (placeholder)
+  console.log("Apply clicked (volunteer):", opp);
+  toast({
+    title: "Application coming soon",
+    description:
+      "The application flow will be available once the backend is connected.",
+    status: "success",
+    duration: 3000,
+    isClosable: true,
+  });
+};
+
 
   const uniqueLocations = Array.from(
     new Set(mockOpportunities.map((o) => o.location))
@@ -158,7 +190,7 @@ const Opportunities = () => {
                 location={opp.location}
                 category={opp.category}
                 description={opp.description}
-                onView={() => handleView(opp)}  // ⬅️ Now navigates correctly
+                onView={() => handleView(opp)}
                 onApply={() => handleApply(opp)}
               />
             ))}
@@ -170,3 +202,4 @@ const Opportunities = () => {
 };
 
 export default Opportunities;
+

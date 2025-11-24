@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import {
   Box,
   Container,
@@ -17,9 +17,11 @@ import {
   InputGroup,
   InputRightElement,
 } from "@chakra-ui/react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -30,6 +32,24 @@ export default function Login() {
   const toast = useToast();
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
+  const location = useLocation();
+
+useEffect(() => {
+  if (location.state?.fromApply) {
+    toast({
+      title: "Log in required to apply",
+      description:
+        "Please log in or sign up as a volunteer to apply for this opportunity.",
+      status: "info",
+      duration: 4000,
+      isClosable: true,
+    });
+
+    // Clear the state so the toast doesn't repeat on back/forward
+    navigate(location.pathname, { replace: true });
+  }
+}, [location.state, location.pathname, navigate, toast]);
+
 
   const emailValid = /^\S+@\S+\.\S+$/.test(email) || email.length === 0;
 
