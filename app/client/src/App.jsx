@@ -13,14 +13,15 @@ import About from "./pages/static/about.jsx";
 // Opportunities
 import Opportunities from "./pages/Opportunities/Opportunities.jsx";
 import OpportunityDetails from "./pages/Opportunities/OpportunityDetails.jsx";
-import CreateOpportunity from "./pages/Opportunities/CreateOpportunity.jsx"; // ⬅️ NEW
+import CreateOpportunity from "./pages/Opportunities/CreateOpportunity.jsx";
+import EditOpportunity from "./pages/Opportunities/EditOpportunity.jsx"; // ⬅️ NEW
 
 // Dashboards
 import VolunteerDashboard from "./pages/dashboard/VolunteerDashboard.jsx";
 import OrgDashboard from "./pages/dashboard/OrgDashboard.jsx";
 
 // Route guards
-import ProtectedRoute from "./routes/ProtectedRoute.jsx"; // <-- make sure this filename matches your file
+import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 
 export default function App() {
   return (
@@ -42,21 +43,23 @@ export default function App() {
         <Route path="opportunities" element={<Opportunities />} />
         <Route path="opportunities/:id" element={<OpportunityDetails />} />
 
-        {/* Volunteer dashboard (must be logged in, role "volunteer") */}
+        {/* Volunteer dashboard (requires volunteer role) */}
         <Route element={<ProtectedRoute requiredRole="volunteer" />}>
           <Route path="dashboard" element={<VolunteerDashboard />} />
         </Route>
 
-        {/* Organization routes (must be logged in, role "organization") */}
+        {/* Organization routes (requires organization role) */}
         <Route element={<ProtectedRoute requiredRole="organization" />}>
           <Route path="org/dashboard" element={<OrgDashboard />} />
-          <Route path="org/opportunities/new" element={<CreateOpportunity />} /> {/* ⬅️ NEW */}
+          <Route path="org/opportunities/new" element={<CreateOpportunity />} />
+          <Route path="org/opportunities/:id/edit" element={<EditOpportunity />} /> {/* ⬅️ NEW */}
         </Route>
 
       </Route>
     </Routes>
   );
 }
+
 
 
 
