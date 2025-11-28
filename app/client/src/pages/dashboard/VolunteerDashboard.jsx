@@ -10,10 +10,14 @@ import {
 } from "@chakra-ui/react";
 import { opportunities } from "../../mock/opportunities";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function VolunteerDashboard() {
   const navigate = useNavigate();
+  const { user, cancelApplication, removeSavedOpportunity } = useAuth();
 
+  const applied = user?.appliedOpportunities || [];
+  const saved = user?.savedOpportunities || [];
   const upcoming = opportunities.slice(0, 3); // simple subset for now
 
   return (
@@ -23,27 +27,111 @@ export default function VolunteerDashboard() {
 
         {/* Quick actions / overview */}
         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
+          {/* My Applications */}
           <Box p={6} bg="white" rounded="2xl" shadow="md">
             <Heading size="md" mb={2}>
               My Applications
             </Heading>
-            <Text color="gray.600">
-              You haven&apos;t applied to any opportunities yet.
-            </Text>
-            <Button mt={4} variant="outline" onClick={() => navigate("/opportunities")}>
-              Find Opportunities
-            </Button>
+            {applied.length === 0 ? (
+              <>
+                <Text color="gray.600">
+                  You haven&apos;t applied to any opportunities yet.
+                </Text>
+                <Button
+                  mt={4}
+                  variant="outline"
+                  onClick={() => navigate("/opportunities")}
+                >
+                  Find Opportunities
+                </Button>
+              </>
+            ) : (
+              <Stack spacing={3} mt={3}>
+                {applied.map((opp) => (
+                  <Box
+                    key={opp.id}
+                    p={3}
+                    bg="gray.50"
+                    rounded="md"
+                    borderWidth="1px"
+                  >
+                    <Text fontWeight="semibold">{opp.title}</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      {opp.organization} • {opp.location}
+                    </Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {opp.date
+                        ? new Date(opp.date).toLocaleDateString()
+                        : "Date TBD"}
+                    </Text>
+                    <Button
+                      size="xs"
+                      mt={2}
+                      mr={2}
+                      onClick={() => navigate(`/opportunities/${opp.id}`)}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      colorScheme="red"
+                      onClick={() => cancelApplication(opp.id)}
+                    >
+                      Cancel
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+            )}
           </Box>
 
+          {/* Saved Opportunities */}
           <Box p={6} bg="white" rounded="2xl" shadow="md">
             <Heading size="md" mb={2}>
               Saved Opportunities
             </Heading>
-            <Text color="gray.600">
-              Save roles you&apos;re interested in and they&apos;ll show up here.
-            </Text>
+            {saved.length === 0 ? (
+              <Text color="gray.600">
+                Save roles you&apos;re interested in and they&apos;ll show up here.
+              </Text>
+            ) : (
+              <Stack spacing={3} mt={2}>
+                {saved.map((opp) => (
+                  <Box
+                    key={opp.id}
+                    p={3}
+                    bg="gray.50"
+                    rounded="md"
+                    borderWidth="1px"
+                  >
+                    <Text fontWeight="semibold">{opp.title}</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      {opp.organization} • {opp.location}
+                    </Text>
+                    <Button
+                      size="xs"
+                      mt={2}
+                      mr={2}
+                      onClick={() => navigate(`/opportunities/${opp.id}`)}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      colorScheme="red"
+                      onClick={() => removeSavedOpportunity(opp.id)}
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+            )}
           </Box>
 
+          {/* Recommended Opportunities */}
           <Box p={6} bg="white" rounded="2xl" shadow="md">
             <Heading size="md" mb={2}>
               Recommended Opportunities
@@ -62,7 +150,8 @@ export default function VolunteerDashboard() {
           </Heading>
           {upcoming.length === 0 ? (
             <Text color="gray.600">
-              No upcoming opportunities yet. Check the opportunities page to explore more.
+              No upcoming opportunities yet. Check the opportunities page to
+              explore more.
             </Text>
           ) : (
             <Stack spacing={3}>
@@ -98,4 +187,6 @@ export default function VolunteerDashboard() {
     </Container>
   );
 }
+
+
 

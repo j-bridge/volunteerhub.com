@@ -27,7 +27,7 @@ const Opportunities = () => {
   const pageBg = useColorModeValue("gray.50", "gray.900");
   const toast = useToast();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, applyToOpportunity } = useAuth();
 
   const filteredOpportunities = useMemo(() => {
     const now = new Date();
@@ -56,43 +56,68 @@ const Opportunities = () => {
     });
   }, [searchTerm, category, location, dateRange]);
 
- const handleView = (opp) => {
-  navigate(`/opportunities/${opp.id}`);
-};
+  const hasApplied = (id) =>
+    !!user?.appliedOpportunities?.some((o) => String(o.id) === String(id));
 
+  const handleView = (opp) => {
+    navigate(`/opportunities/${opp.id}`);
+  };
 
- const handleApply = (opp) => {
-  // Not logged in → send them to login and let Login show the message
-  if (!user) {
-    navigate("/login", { state: { fromApply: true } });
-    return;
-  }
+  const handleApply = (opp) => {
+    // Not logged in → send them to login and let Login show the message
+    if (!user) {
+      navigate("/login", { state: { fromApply: true } });
+      return;
+    }
 
-  // Logged in, but not a volunteer
-  if (user.role !== "volunteer") {
+    // Logged in, but not a volunteer
+    if (user.role !== "volunteer") {
+      toast({
+        title: "Volunteer account required",
+        description:
+          "Only volunteer accounts can apply for opportunities. Please sign in with a volunteer account or create one.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (hasApplied(opp.id)) {
+      toast({
+        title: "Already applied",
+        description: "You have already applied for this opportunity.",
+        status: "info",
+        duration: 2500,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Apply for "${opp.title}" at ${opp.organization}?`
+    );
+    if (!confirmed) return;
+
+    const summary = {
+      id: opp.id,
+      title: opp.title,
+      organization: opp.organization,
+      date: opp.date,
+      location: opp.location,
+      category: opp.category,
+    };
+
+    applyToOpportunity(summary);
+
     toast({
-      title: "Volunteer account required",
-      description:
-        "Only volunteer accounts can apply for opportunities. Please sign in with a volunteer account or create one.",
-      status: "warning",
-      duration: 4000,
+      title: "Application recorded",
+      description: "This opportunity now appears in your dashboard.",
+      status: "success",
+      duration: 3000,
       isClosable: true,
     });
-    return;
-  }
-
-  // Logged-in volunteer (placeholder)
-  console.log("Apply clicked (volunteer):", opp);
-  toast({
-    title: "Application coming soon",
-    description:
-      "The application flow will be available once the backend is connected.",
-    status: "success",
-    duration: 3000,
-    isClosable: true,
-  });
-};
-
+  };
 
   const uniqueLocations = Array.from(
     new Set(mockOpportunities.map((o) => o.location))
@@ -192,6 +217,7 @@ const Opportunities = () => {
                 description={opp.description}
                 onView={() => handleView(opp)}
                 onApply={() => handleApply(opp)}
+                applied={hasApplied(opp.id)}
               />
             ))}
           </SimpleGrid>
@@ -202,4 +228,5 @@ const Opportunities = () => {
 };
 
 export default Opportunities;
+
 

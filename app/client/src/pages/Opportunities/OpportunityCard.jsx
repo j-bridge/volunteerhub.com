@@ -22,6 +22,7 @@ const OpportunityCard = ({
   description,
   onView,
   onApply,
+  applied = false,
 }) => {
   const cardBg = useColorModeValue("white", "gray.800");
 
@@ -64,8 +65,13 @@ const OpportunityCard = ({
           <Button size="sm" onClick={onView}>
             View
           </Button>
-          <Button size="sm" variant="outline" onClick={onApply}>
-            Apply
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onApply}
+            isDisabled={applied}
+          >
+            {applied ? "Applied" : "Apply"}
           </Button>
         </HStack>
       </Stack>
@@ -74,3 +80,4 @@ const OpportunityCard = ({
 };
 
 export default OpportunityCard;
+

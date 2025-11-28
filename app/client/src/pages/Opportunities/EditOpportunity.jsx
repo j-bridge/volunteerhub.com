@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -13,10 +13,16 @@ import {
   Button,
   useToast,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-export default function CreateOpportunity() {
+export default function EditOpportunity() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const toast = useToast();
+  const { user, updateCreatedOpportunity } = useAuth();
+
+  const [loaded, setLoaded] = useState(false);
   const [title, setTitle] = useState("");
   const [organization, setOrganization] = useState("");
   const [date, setDate] = useState("");
@@ -24,24 +30,55 @@ export default function CreateOpportunity() {
   const [category, setCategory] = useState("Community");
   const [description, setDescription] = useState("");
 
-  const toast = useToast();
-  const navigate = useNavigate();
-  const { user, createOpportunity } = useAuth();
+  const created = user?.createdOpportunities || [];
+  const existing = created.find((o) => String(o.id) === String(id));
+
+  useEffect(() => {
+    if (!existing) {
+      setLoaded(true);
+      return;
+    }
+
+    setTitle(existing.title || "");
+    setOrganization(existing.organization || "");
+    setDate(existing.date || "");
+    setLocation(existing.location || "");
+    setCategory(existing.category || "Community");
+    setDescription(existing.description || "");
+    setLoaded(true);
+  }, [existing]);
+
+  if (!loaded) {
+    // small loading state
+    return (
+      <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
+        <Container maxW="container.md">
+          <Text>Loading opportunity...</Text>
+        </Container>
+      </Box>
+    );
+  }
+
+  if (!existing) {
+    // no such opp in this org's local state
+    return (
+      <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
+        <Container maxW="container.md">
+          <Heading mb={3}>Opportunity not found</Heading>
+          <Text mb={6} color="gray.600">
+            We couldn&apos;t find this opportunity in your created list. It may
+            have been removed.
+          </Text>
+          <Button onClick={() => navigate("/org/dashboard")} colorScheme="teal">
+            Back to dashboard
+          </Button>
+        </Container>
+      </Box>
+    );
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!user || user.role !== "organization") {
-      toast({
-        title: "Organization account required",
-        description:
-          "Only organization accounts can create opportunities. Please sign in as an organization.",
-        status: "warning",
-        duration: 4000,
-        isClosable: true,
-      });
-      return;
-    }
 
     if (!title || !organization || !date || !location || !description) {
       toast({
@@ -54,22 +91,18 @@ export default function CreateOpportunity() {
       return;
     }
 
-    const payload = {
+    updateCreatedOpportunity(id, {
       title,
       organization,
       date,
       location,
       category,
       description,
-    };
-
-    const created = createOpportunity(payload);
-    console.log("Create opportunity (mock):", created);
+    });
 
     toast({
-      title: "Opportunity created",
-      description:
-        "This is stored locally for now. Backend integration will persist it later.",
+      title: "Opportunity updated",
+      description: "Your changes have been saved locally.",
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -81,10 +114,10 @@ export default function CreateOpportunity() {
   return (
     <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
       <Container maxW="container.md">
-        <Heading mb={2}>Create New Opportunity</Heading>
+        <Heading mb={2}>Edit Opportunity</Heading>
         <Text mb={8} color="gray.600">
-          Fill out the details for your volunteer event. These fields match the
-          opportunities shown on the public listing page.
+          Update the details of your volunteer event. This uses the same fields
+          as the create form.
         </Text>
 
         <Box
@@ -161,7 +194,7 @@ export default function CreateOpportunity() {
               mt={2}
               alignSelf="flex-start"
             >
-              Create Opportunity
+              Save Changes
             </Button>
           </Stack>
         </Box>
@@ -169,5 +202,3 @@ export default function CreateOpportunity() {
     </Box>
   );
 }
-
-
