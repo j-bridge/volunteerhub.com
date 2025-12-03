@@ -48,6 +48,9 @@ export default function NavBar() {
           <Link as={RouterLink} to="/contact" fontWeight="500">
             Contact
           </Link>
+          <Link as={RouterLink} to="/videos" fontWeight="500">
+            Videos
+          </Link>
 
           {/* Only show My Dashboard when logged in */}
           {user && (
@@ -56,11 +59,18 @@ export default function NavBar() {
               to={
                 user.role === "organization"
                   ? "/org/dashboard"
-                  : "/dashboard"
+                  : user.role === "admin"
+                    ? "/admin/dashboard"
+                    : "/dashboard"
               }
               fontWeight="500"
             >
               My Dashboard
+            </Link>
+          )}
+          {user?.role === "admin" && (
+            <Link as={RouterLink} to="/admin/dashboard" fontWeight="600" color="teal.600">
+              Admin
             </Link>
           )}
         </HStack>

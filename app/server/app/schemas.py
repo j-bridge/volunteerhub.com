@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 from .extensions import ma
-from .models import User, Organization, Opportunity, Application
+from .models import User, Organization, Opportunity, Application, VideoSubmission
 
 
 # Response schemas
@@ -64,6 +64,12 @@ class RegisterSchema(Schema):
     email = fields.Email(required=True)
     password = fields.String(required=True)
     name = fields.String(required=False, allow_none=True, validate=validate.Length(max=255))
+    role = fields.String(
+        required=False,
+        allow_none=True,
+        validate=validate.OneOf(["volunteer", "organization"]),
+        load_default="volunteer",
+    )
 
 
 class LoginSchema(Schema):
@@ -122,3 +128,30 @@ class ApplicationCreateSchema(Schema):
 
 class ApplicationReviewSchema(Schema):
     decision = fields.String(required=True, validate=validate.OneOf(["accept", "reject"]))
+
+
+class VideoSubmissionSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = VideoSubmission
+        load_instance = True
+        include_fk = True
+
+    id = ma.auto_field(dump_only=True)
+    user_id = ma.auto_field()
+    opportunity_id = ma.auto_field()
+    title = ma.auto_field()
+    description = ma.auto_field()
+    video_url = ma.auto_field()
+    status = ma.auto_field()
+    created_at = ma.auto_field()
+
+
+class VideoSubmissionCreateSchema(Schema):
+    title = fields.String(required=True, validate=validate.Length(min=3, max=255))
+    description = fields.String(required=False, allow_none=True)
+    video_url = fields.Url(required=True, schemes={"http", "https"})
+    opportunity_id = fields.Integer(required=False, allow_none=True)
+
+
+class VideoSubmissionStatusSchema(Schema):
+    status = fields.String(required=True, validate=validate.OneOf(["submitted", "approved", "rejected"]))

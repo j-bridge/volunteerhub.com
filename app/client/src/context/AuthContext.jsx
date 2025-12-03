@@ -66,43 +66,6 @@ export function AuthProvider({ children }) {
     setReady(true);
   }, []);
 
-  // =====================================================
-  // DEV-ONLY SEED USER (do NOT commit this block to main)
-  // =====================================================
-  useEffect(() => {
-    // Only run once everything has tried to load from storage
-    if (!ready) return;
-
-    // If we already have a user (real login or saved), don't override
-    if (user) return;
-
-    // Only auto-seed in development mode
-    if (import.meta.env.MODE !== "development") return;
-
-    // 🔁 Toggle which fake user you want to test:
-    const fakeVolunteer = {
-      id: "dev-vol-1",
-      name: "Dev Volunteer",
-      email: "dev.volunteer@example.org",
-      role: "volunteer",
-    };
-
-    const fakeOrg = {
-      id: "dev-org-1",
-      name: "Dev Org",
-      email: "dev.org@example.org",
-      role: "organization",
-    };
-
-    // <<< choose one of these:
-    //const chosen = fakeVolunteer;
-     const chosen = fakeOrg;
-
-    // Use our helper so it gets normalized and written to storage
-    setAndStoreUser(chosen);
-  }, [ready, user, setAndStoreUser]); // setAndStoreUser is stable in this component
-// DELETE THIS BLOCK OF CODE BEFORE COMMITING//
-
   const login = (token, userData, remember = true) => {
     const store = remember ? localStorage : sessionStorage;
     const other = remember ? sessionStorage : localStorage;
@@ -274,5 +237,4 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
-
 

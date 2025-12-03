@@ -29,7 +29,9 @@ export default function Signup() {
   const navigate = useNavigate();
 
   const emailValid = /^\S+@\S+\.\S+$/.test(email) || email.length === 0;
-  const passwordValid = password.length >= 6 || password.length === 0;
+  const passwordValid =
+    password.length === 0 ||
+    (password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password));
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -127,6 +129,7 @@ export default function Signup() {
                 placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
               />
             </FormControl>
 
@@ -137,6 +140,7 @@ export default function Signup() {
                 placeholder="you@example.org"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
               <FormErrorMessage>Enter a valid email address.</FormErrorMessage>
             </FormControl>
@@ -162,12 +166,13 @@ export default function Signup() {
               <FormLabel>Password</FormLabel>
               <Input
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters with a number"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
               />
               <FormErrorMessage>
-                Password must be at least 6 characters.
+                Password must be at least 8 characters and include a number.
               </FormErrorMessage>
             </FormControl>
 

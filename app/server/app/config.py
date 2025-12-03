@@ -22,7 +22,18 @@ class BaseConfig:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(
         days=int(os.getenv("JWT_REFRESH_EXPIRES_DAYS", "30"))
     )
-    CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173")
+    # Comma-separated list of allowed origins for CORS preflight
+    CORS_ORIGINS = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,https://volunteerhub.apps.jbridgewater.com",
+    )
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME = os.getenv("SMTP_USERNAME")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+    SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() in ("1", "true", "yes", "on")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "VolunteerHub <no-reply@localhost>")
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     PROPAGATE_EXCEPTIONS = True
 
 

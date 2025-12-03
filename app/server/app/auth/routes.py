@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from sqlalchemy import select
 
@@ -8,6 +8,7 @@ from marshmallow import ValidationError
 from ..schemas import UserSchema, RegisterSchema, LoginSchema, ChangeRoleSchema
 from ..security import create_token_pair, hash_password, verify_password, password_validation_error
 from ..permissions import role_required
+from ..utils.emailer import send_email
 
 bp = Blueprint("auth", __name__)
 user_schema = UserSchema()
@@ -34,9 +35,25 @@ def register():
     if existing:
         return jsonify({"error": "Email already registered"}), 409
 
-    user = User(email=email, password_hash=hash_password(password), role="volunteer")
+    user = User(
+        email=email,
+        password_hash=hash_password(password),
+        role=data.get("role") or "volunteer",
+        name=data.get("name"),
+    )
     db.session.add(user)
     db.session.commit()
+
+    try:
+        frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173")
+        send_email(
+            subject="Welcome to VolunteerHub",
+            recipients=email,
+            text_body=f"Hi {user.name or 'there'},\n\nThanks for joining VolunteerHub! You can sign in at {frontend_url}.\n\n- VolunteerHub",
+            html_body=f"<p>Hi {user.name or 'there'},</p><p>Thanks for joining VolunteerHub! You can <a href='{frontend_url}'>sign in here</a>.</p><p>- VolunteerHub</p>",
+        )
+    except Exception:
+        current_app.logger.exception("Failed to send welcome email to %s", email)
 
     tokens = create_token_pair(identity=user.id, additional_claims={"role": user.role})
     return jsonify({"user": user_schema.dump(user), "tokens": tokens}), 201

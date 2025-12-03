@@ -1,10 +1,11 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from ..extensions import db
-from ..models import Application
+from ..models import Application, Opportunity, User
 from ..permissions import organization_required
 from ..schemas import ApplicationSchema, ApplicationCreateSchema, ApplicationReviewSchema
 from marshmallow import ValidationError
+from ..utils.emailer import send_email
 
 bp = Blueprint("applications", __name__)
 application_schema = ApplicationSchema()
@@ -35,10 +36,49 @@ def create_application():
     if existing:
         return jsonify({"error": "Application already exists"}), 409
 
-    app = Application(user_id=user_id, opportunity_id=opp_id)
-    db.session.add(app)
+    app_model = Application(user_id=user_id, opportunity_id=opp_id)
+    db.session.add(app_model)
     db.session.commit()
-    return jsonify({"application": application_schema.dump(app)}), 201
+
+    try:
+        applicant = db.session.get(User, user_id)
+        opportunity = db.session.get(Opportunity, opp_id)
+        frontend = current_app.config.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+        opp_link = f"{frontend}/opportunities/{opp_id}"
+
+        if applicant and opportunity:
+            send_email(
+                subject=f"Application received: {opportunity.title}",
+                recipients=applicant.email,
+                text_body=(
+                    f"Hi {applicant.name or 'there'},\n\n"
+                    f"We've received your application for \"{opportunity.title}\".\n"
+                    f"View the opportunity: {opp_link}\n\n"
+                    "Thank you for volunteering!"
+                ),
+                html_body=(
+                    f"<p>Hi {applicant.name or 'there'},</p>"
+                    f"<p>We&apos;ve received your application for <strong>{opportunity.title}</strong>.</p>"
+                    f"<p><a href='{opp_link}'>View the opportunity</a></p>"
+                    "<p>Thank you for volunteering!</p>"
+                ),
+            )
+
+            contact_email = opportunity.organization.contact_email if opportunity.organization else None
+            if contact_email:
+                send_email(
+                    subject=f"New volunteer application for {opportunity.title}",
+                    recipients=contact_email,
+                    text_body=(
+                        f"A new volunteer applied for \"{opportunity.title}\".\n\n"
+                        f"Applicant: {applicant.email}\n"
+                        f"Opportunity link: {opp_link}"
+                    ),
+                )
+    except Exception:
+        current_app.logger.exception("Failed to send application notification")
+
+    return jsonify({"application": application_schema.dump(app_model)}), 201
 
 
 @bp.patch("/<int:application_id>/review")

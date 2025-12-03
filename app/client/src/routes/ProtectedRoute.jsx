@@ -27,11 +27,12 @@ export default function ProtectedRoute({ requiredRole }) {
 
   // If a specific role is required and user doesn't match → redirect
   if (requiredRole && user.role !== requiredRole) {
-    // You can change this destination if you prefer
-    return <Navigate to="/dashboard" replace />;
+    const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    if (!allowedRoles.includes(user.role)) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   // Logged in (and role is OK if required) → render nested routes
   return <Outlet />;
 }
-

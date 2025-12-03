@@ -103,3 +103,18 @@ class Application(db.Model):
             raise ValueError("cannot withdraw once finalized")
         self.status = "withdrawn"
         db.session.commit()
+
+
+class VideoSubmission(db.Model):
+    __tablename__ = "video_submissions"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey("opportunities.id"), nullable=True)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    video_url = db.Column(db.String(512), nullable=False)
+    status = db.Column(db.String(50), default="submitted")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref("videos", lazy="dynamic"))
+    opportunity = db.relationship("Opportunity", backref=db.backref("video_submissions", lazy="dynamic"))

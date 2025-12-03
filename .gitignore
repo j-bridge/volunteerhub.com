@@ -51,6 +51,8 @@ Desktop.ini
 .env.production
 .env.development
 .env.test
+!.env.example
+!app/client/.env.example
 
 # ---- Logs ----
 logs/

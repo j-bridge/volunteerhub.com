@@ -3,16 +3,19 @@ from typing import Iterable
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 
-from .config import get_config, INSTANCE_DIR
+from .config import get_config, INSTANCE_DIR, PROJECT_ROOT
 from .extensions import bcrypt, cors, db, jwt, ma, migrate
 from .auth import auth_bp
 from .users import users_bp
 from .opportunities import opportunities_bp
 from .applications import applications_bp
 from .orgs import orgs_bp
+from .admin import admin_bp
+from .videos import videos_bp
 
 
 def create_app(config_name: str | None = None) -> Flask:
+    load_dotenv(PROJECT_ROOT / ".env")
     load_dotenv()
 
     os.makedirs(INSTANCE_DIR, exist_ok=True)
@@ -59,6 +62,8 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(opportunities_bp, url_prefix="/api/opportunities")
     app.register_blueprint(applications_bp, url_prefix="/api/applications")
     app.register_blueprint(orgs_bp, url_prefix="/api/orgs")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
+    app.register_blueprint(videos_bp, url_prefix="/api/videos")
 
 
 def register_error_handlers(app: Flask) -> None:
@@ -82,4 +87,5 @@ def register_shellcontext(app: Flask) -> None:
             "Organization": models.Organization,
             "Opportunity": models.Opportunity,
             "Application": models.Application,
+            "VideoSubmission": models.VideoSubmission,
         }

@@ -5,6 +5,8 @@ import RootLayout from "./layouts/RootLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import VideoGallery from "./pages/VideoGallery.jsx";
+import VideoSubmit from "./pages/VideoSubmit.jsx";
 
 // Static pages
 import Contact from "./pages/static/contact.jsx";
@@ -19,6 +21,7 @@ import EditOpportunity from "./pages/Opportunities/EditOpportunity.jsx"; // ⬅�
 // Dashboards
 import VolunteerDashboard from "./pages/dashboard/VolunteerDashboard.jsx";
 import OrgDashboard from "./pages/dashboard/OrgDashboard.jsx";
+import AdminDashboard from "./pages/dashboard/AdminDashboard.jsx";
 
 // Route guards
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
@@ -39,6 +42,12 @@ export default function App() {
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
 
+        {/* Videos */}
+        <Route path="videos" element={<VideoGallery />} />
+        <Route element={<ProtectedRoute requiredRole={['volunteer', 'organization', 'admin']} />}>
+          <Route path="videos/submit" element={<VideoSubmit />} />
+        </Route>
+
         {/* Opportunities */}
         <Route path="opportunities" element={<Opportunities />} />
         <Route path="opportunities/:id" element={<OpportunityDetails />} />
@@ -55,12 +64,15 @@ export default function App() {
           <Route path="org/opportunities/:id/edit" element={<EditOpportunity />} /> {/* ⬅️ NEW */}
         </Route>
 
+        {/* Admin */}
+        <Route element={<ProtectedRoute requiredRole="admin" />}>
+          <Route path="admin/dashboard" element={<AdminDashboard />} />
+        </Route>
+
       </Route>
     </Routes>
   );
 }
-
-
 
 
 
