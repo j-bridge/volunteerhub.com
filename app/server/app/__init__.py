@@ -3,7 +3,7 @@ from typing import Iterable
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 
-from .config import get_config
+from .config import get_config, INSTANCE_DIR
 from .extensions import bcrypt, cors, db, jwt, ma, migrate
 from .auth import auth_bp
 from .users import users_bp
@@ -14,11 +14,10 @@ from .orgs import orgs_bp
 
 def create_app(config_name: str | None = None) -> Flask:
     load_dotenv()
-    
-    instance_path = os.path.join(os.path.dirname(__file__), "instance")
-    os.makedirs(os.path.join(os.path.dirname(__file__), "instance"), exist_ok=True)
 
-    app = Flask(__name__, instance_relative_config=True)
+    os.makedirs(INSTANCE_DIR, exist_ok=True)
+
+    app = Flask(__name__, instance_path=str(INSTANCE_DIR), instance_relative_config=True)
 
     config_obj = get_config(config_name)
     app.config.from_object(config_obj)

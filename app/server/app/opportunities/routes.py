@@ -1,14 +1,16 @@
-from datetime import datetime
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from ..extensions import db
 from ..models import Opportunity
 from ..permissions import org_admin_or_site_admin_required
-from ..schemas import OpportunitySchema
+from ..schemas import OpportunitySchema, OpportunityCreateSchema, OpportunityUpdateSchema
+from marshmallow import ValidationError
 
 bp = Blueprint("opportunities", __name__)
 opportunity_schema = OpportunitySchema()
 opportunities_schema = OpportunitySchema(many=True)
+opp_create_schema = OpportunityCreateSchema()
+opp_update_schema = OpportunityUpdateSchema()
 
 
 @bp.get("/")
@@ -31,19 +33,12 @@ def get_opportunity(opportunity_id):
 @jwt_required()
 @org_admin_or_site_admin_required("org_id")
 def create_opportunity():
-    data = request.get_json() or {}
-    title = data.get("title", "").strip()
-    if not title:
-        return jsonify({"error": "Title required"}), 400
+    try:
+        data = opp_create_schema.load(request.get_json() or {})
+    except ValidationError as err:
+        return jsonify({"error": "Validation error", "details": err.messages}), 400
 
-    opp = Opportunity(
-        title=title,
-        description=data.get("description"),
-        location=data.get("location"),
-        start_date=_parse_datetime(data.get("start_date")),
-        end_date=_parse_datetime(data.get("end_date")),
-        org_id=data.get("org_id"),
-    )
+    opp = Opportunity(**data)
     db.session.add(opp)
     db.session.commit()
     return jsonify({"opportunity": opportunity_schema.dump(opp)}), 201
@@ -56,7 +51,10 @@ def update_opportunity(opportunity_id):
     opp = db.session.get(Opportunity, opportunity_id)
     if not opp:
         return jsonify({"error": "Not found"}), 404
-    data = request.get_json() or {}
+    try:
+        data = opp_update_schema.load(request.get_json() or {}, partial=True)
+    except ValidationError as err:
+        return jsonify({"error": "Validation error", "details": err.messages}), 400
     opp.update_details(**data)
     return jsonify({"opportunity": opportunity_schema.dump(opp)})
 
@@ -71,12 +69,3 @@ def delete_opportunity(opportunity_id):
     db.session.delete(opp)
     db.session.commit()
     return jsonify({"message": "Opportunity deleted"}), 200
-
-
-def _parse_datetime(value):
-    if not value:
-        return None
-    try:
-        return datetime.fromisoformat(value)
-    except Exception:
-        return None

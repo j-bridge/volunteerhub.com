@@ -77,6 +77,12 @@ flask --app wsgi.py run --debug
 python wsgi.py
 ```
 
+### Run frontend & backend together
+```bash
+scripts/dev.sh
+```
+This starts the Flask API from `app/server` and the Vite frontend from `app/client` concurrently.
+
 ## Directory Structure
 
 ### Frontend

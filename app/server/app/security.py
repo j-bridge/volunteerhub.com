@@ -1,4 +1,5 @@
 from typing import Any
+import re
 
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt
 
@@ -11,6 +12,14 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.check_password_hash(hashed, password)
+
+
+def password_validation_error(password: str) -> str | None:
+    if not password or len(password) < 8:
+        return "password must be at least 8 characters"
+    if not re.search(r"[A-Za-z]", password) or not re.search(r"\d", password):
+        return "password must include at least one letter and one number"
+    return None
 
 
 def create_token_pair(identity: Any, additional_claims: dict[str, Any] | None = None) -> dict[str, str]:

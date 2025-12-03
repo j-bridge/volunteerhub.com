@@ -22,6 +22,22 @@ class User(db.Model):
     organization = db.relationship('Organization', back_populates='owner', uselist=False)
     orgs = db.relationship('Organization', secondary=organization_members, back_populates='members', lazy='dynamic')
 
+    def is_admin(self) -> bool:
+        return self.role == "admin"
+
+    def is_org_member(self, org_id: int) -> bool:
+        if not org_id:
+            return False
+        return self.orgs.filter_by(id=org_id).first() is not None
+
+    def is_org_admin(self, org_id: int) -> bool:
+        if not org_id:
+            return False
+        org = Organization.query.get(org_id)
+        if not org:
+            return False
+        return org.owner_id == self.id or self.is_org_member(org_id)
+
 class Organization(db.Model):
     __tablename__ = 'organizations'
     id = db.Column(db.Integer, primary_key=True)
@@ -48,6 +64,23 @@ class Opportunity(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
 
+    @staticmethod
+    def filter_by_criteria(location=None, org_id=None, active_only=True):
+        q = Opportunity.query
+        if active_only:
+            q = q.filter_by(is_active=True)
+        if location:
+            q = q.filter(Opportunity.location.ilike(f"%{location}%"))
+        if org_id:
+            q = q.filter_by(org_id=org_id)
+        return q.order_by(Opportunity.created_at.desc()).all()
+
+    def update_details(self, **data):
+        for field in ("title", "description", "location", "start_date", "end_date", "org_id", "is_active"):
+            if field in data and data[field] is not None:
+                setattr(self, field, data[field])
+        db.session.commit()
+
 class Application(db.Model):
     __tablename__ = 'applications'
     id = db.Column(db.Integer, primary_key=True)
@@ -58,3 +91,15 @@ class Application(db.Model):
 
     user = db.relationship('User', backref=db.backref('applications', lazy='dynamic'))
     opportunity = db.relationship('Opportunity', backref=db.backref('applications', lazy='dynamic'))
+
+    def review(self, decision: str):
+        if decision not in ("accept", "reject"):
+            raise ValueError("decision must be accept or reject")
+        self.status = "accepted" if decision == "accept" else "rejected"
+        db.session.commit()
+
+    def withdraw(self):
+        if self.status in ("accepted", "rejected", "withdrawn"):
+            raise ValueError("cannot withdraw once finalized")
+        self.status = "withdrawn"
+        db.session.commit()

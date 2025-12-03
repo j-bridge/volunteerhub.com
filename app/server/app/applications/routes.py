@@ -3,11 +3,14 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from ..extensions import db
 from ..models import Application
 from ..permissions import organization_required
-from ..schemas import ApplicationSchema
+from ..schemas import ApplicationSchema, ApplicationCreateSchema, ApplicationReviewSchema
+from marshmallow import ValidationError
 
 bp = Blueprint("applications", __name__)
 application_schema = ApplicationSchema()
 applications_schema = ApplicationSchema(many=True)
+application_create_schema = ApplicationCreateSchema()
+application_review_schema = ApplicationReviewSchema()
 
 
 @bp.get("/my")
@@ -21,11 +24,12 @@ def my_applications():
 @bp.post("/")
 @jwt_required()
 def create_application():
-    data = request.get_json() or {}
+    try:
+        data = application_create_schema.load(request.get_json() or {})
+    except ValidationError as err:
+        return jsonify({"error": "Validation error", "details": err.messages}), 400
     user_id = get_jwt_identity()
     opp_id = data.get("opportunity_id")
-    if not opp_id:
-        return jsonify({"error": "opportunity_id required"}), 400
 
     existing = Application.query.filter_by(user_id=user_id, opportunity_id=opp_id).first()
     if existing:
@@ -41,7 +45,10 @@ def create_application():
 @jwt_required()
 @organization_required
 def review_application(application_id):
-    data = request.get_json() or {}
+    try:
+        data = application_review_schema.load(request.get_json() or {})
+    except ValidationError as err:
+        return jsonify({"error": "Validation error", "details": err.messages}), 400
     decision = data.get("decision")
     app = db.session.get(Application, application_id)
     if not app:

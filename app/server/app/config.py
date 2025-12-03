@@ -2,17 +2,17 @@ import os
 from pathlib import Path
 from datetime import timedelta
 
-BASE_DIR = Path(__file__).resolve().parent 
-INSTANCE_DIR = BASE_DIR / "instance"
-INSTANCE_DIR.mkdir(exist_ok=True)  
+BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR.parent
+INSTANCE_DIR = PROJECT_ROOT / "instance"
+INSTANCE_DIR.mkdir(exist_ok=True)
 
 class BaseConfig:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev")
 
-    CORS_ORIGINS = "*"
     default_sqlite_path = INSTANCE_DIR / "volunteerhub.db"
     default_sqlite_url = f"sqlite:///{str(default_sqlite_path).replace(os.sep, '/')}"
-    SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASE_DIR, "instance", "volunteerhub.db")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", default_sqlite_url)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super-secret-key")
