@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -9,7 +10,6 @@ import {
   Badge,
   Button,
   useColorModeValue,
-  useToast,
   Divider,
   SimpleGrid,
   VStack,
@@ -17,37 +17,86 @@ import {
 } from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { opportunities } from "../../mock/opportunities";
+import { api } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
+import useAppToast from "../../hooks/useAppToast";
 
 export default function OpportunityDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, applyToOpportunity, saveOpportunity, removeSavedOpportunity } =
     useAuth();
-  const toast = useToast();
+  const toast = useAppToast();
+  const [opportunity, setOpportunity] = useState(null);
+  const [related, setRelated] = useState([]);
 
-  const pageBg = useColorModeValue("gray.50", "gray.900");
-  const cardBg = useColorModeValue("white", "gray.800");
+  const pageBg = useColorModeValue("#f2f0eb", "#08141a");
+  const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
+  const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");
+  const textMuted = useColorModeValue("#4a5561", "rgba(231,247,244,0.78)");
 
-  const opportunity = opportunities.find((o) => String(o.id) === String(id));
-  const related = opportunities
-    .filter(
-      (o) =>
-        String(o.id) !== String(id) &&
-        (o.location === opportunity?.location ||
-          o.category === opportunity?.category ||
-          (o.tags || []).some((t) => (opportunity?.tags || []).includes(t)))
-    )
-    .slice(0, 3);
+  const normalizeApiOpp = (opp) => ({
+    id: opp.id,
+    title: opp.title,
+    organization: opp.organization?.name || (opp.org_id ? `Organization #${opp.org_id}` : "Organization"),
+    date: opp.start_date || opp.created_at || new Date().toISOString(),
+    location: opp.location || "TBD",
+    category: opp.category || "Community",
+    description: opp.description || "",
+    tags: [],
+    mode: opp.mode || "In-person",
+    timeCommitment: opp.timeCommitment,
+    spotsRemaining: opp.spotsRemaining,
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await api.get(`/opportunities/${id}`);
+        if (res.data?.opportunity) {
+          const normalized = normalizeApiOpp(res.data.opportunity);
+          setOpportunity(normalized);
+          setRelated(
+            opportunities
+              .filter(
+                (o) =>
+                  String(o.id) !== String(normalized.id) &&
+                  (o.location === normalized.location ||
+                    o.category === normalized.category ||
+                    (o.tags || []).some((t) => (normalized.tags || []).includes(t)))
+              )
+              .slice(0, 3)
+          );
+          return;
+        }
+      } catch (err) {
+        // fall back to mock
+      }
+      const mock = opportunities.find((o) => String(o.id) === String(id));
+      setOpportunity(mock || null);
+      setRelated(
+        opportunities
+          .filter(
+            (o) =>
+              String(o.id) !== String(id) &&
+              (o.location === mock?.location ||
+                o.category === mock?.category ||
+                (o.tags || []).some((t) => (mock?.tags || []).includes(t)))
+          )
+          .slice(0, 3)
+      );
+    };
+    load();
+  }, [id]);
 
   if (!opportunity) {
     return (
       <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }}>
         <Container maxW="4xl">
-          <Heading size="lg" mb={4}>
+          <Heading size="lg" mb={4} color={textPrimary}>
             Opportunity not found
           </Heading>
-          <Text mb={6} color="gray.600">
+          <Text mb={6} color={textMuted}>
             We couldn&apos;t find the opportunity you&apos;re looking for. It may
             have been removed or the link is invalid.
           </Text>
@@ -194,10 +243,10 @@ export default function OpportunityDetails() {
               />
               <HStack justify="space-between" align="flex-start">
                 <Box>
-                  <Heading size="xl" mb={2}>
+                  <Heading size="xl" mb={2} color={textPrimary}>
                     {opportunity.title}
                   </Heading>
-                  <Text fontSize="md" color="gray.600">
+                  <Text fontSize="md" color={textMuted}>
                     {opportunity.organization}
                   </Text>
                 </Box>
@@ -208,7 +257,7 @@ export default function OpportunityDetails() {
                 )}
               </HStack>
 
-              <HStack spacing={3} fontSize="sm" color="gray.600" flexWrap="wrap">
+              <HStack spacing={3} fontSize="sm" color={textMuted} flexWrap="wrap">
                 <Badge variant="subtle">{opportunity.location}</Badge>
                 <Badge colorScheme="green">{opportunity.mode || "In-person"}</Badge>
                 <Badge colorScheme="purple">{opportunity.timeCommitment || "Flexible"}</Badge>
@@ -226,7 +275,7 @@ export default function OpportunityDetails() {
                 </Text>
               </HStack>
 
-              <Text fontSize="md" color="gray.700">
+              <Text fontSize="md" color={textPrimary}>
                 {opportunity.description}
               </Text>
 
@@ -267,7 +316,7 @@ export default function OpportunityDetails() {
             borderColor={useColorModeValue("gray.200", "gray.700")}
           >
             <Heading size="md">Quick info</Heading>
-            <Text fontSize="sm" color="gray.600">
+            <Text fontSize="sm" color={textMuted}>
               Contact: {opportunity.contactEmail} {opportunity.contactPhone ? `• ${opportunity.contactPhone}` : ""}
             </Text>
             {opportunity.tags && (
@@ -285,13 +334,13 @@ export default function OpportunityDetails() {
             <Divider />
             <Stack spacing={3}>
               <Heading size="sm">What to expect</Heading>
-              <Text fontSize="sm" color="gray.700">
+              <Text fontSize="sm" color={textPrimary}>
                 Clear onboarding, day-of instructions, and a point of contact will be provided once you apply.
               </Text>
             </Stack>
             <Stack spacing={3}>
               <Heading size="sm">Location</Heading>
-              <Text fontSize="sm" color="gray.700">
+              <Text fontSize="sm" color={textPrimary}>
                 {opportunity.location}
               </Text>
             </Stack>
@@ -337,4 +386,3 @@ export default function OpportunityDetails() {
     </Box>
   );
 }
-

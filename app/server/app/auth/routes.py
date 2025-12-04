@@ -11,7 +11,7 @@ from datetime import timedelta
 import jwt
 
 from ..extensions import db
-from ..models import User
+from ..models import User, Organization
 from marshmallow import ValidationError
 from ..schemas import (
     UserSchema,
@@ -52,13 +52,28 @@ def register():
     if existing:
         return jsonify({"error": "Email already registered"}), 409
 
+    user_role = data.get("role") or "volunteer"
+    org_name = data.get("organization_name")
+
     user = User(
         email=email,
         password_hash=hash_password(password),
-        role=data.get("role") or "volunteer",
+        role=user_role,
         name=data.get("name"),
     )
     db.session.add(user)
+    db.session.flush()
+
+    if user_role == "organization":
+        if not org_name:
+            return jsonify({"error": "organization_name is required for organization accounts"}), 400
+        org = Organization(
+            name=org_name,
+            contact_email=email,
+            owner_id=user.id,
+        )
+        db.session.add(org)
+
     db.session.commit()
 
     try:

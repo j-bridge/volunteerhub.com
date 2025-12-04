@@ -1,6 +1,6 @@
 // app/client/src/pages/static/Contact.jsx
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Heading,
@@ -12,28 +12,67 @@ import {
   Input,
   Textarea,
   Button,
-  useToast,
   useColorModeValue,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../api/client";
+import { useAuth } from "../../context/AuthContext";
+import useAppToast from "../../hooks/useAppToast";
 
 const Contact = () => {
-  const toast = useToast();
+  const toast = useAppToast();
   const cardBg = useColorModeValue("white", "gray.800");
   const sectionBg = useColorModeValue("gray.50", "#0f1a21");
   const heroColor = useColorModeValue("#1aa59a", "#1aa59a"); // logo/chat accent
   const headingText = useColorModeValue("gray.800", "#e7f7f4");
   const bodyText = useColorModeValue("gray.600", "#dbe8f0"); // brighter in dark mode
   const emailColor = useColorModeValue("#0f7c70", "#7dd3fc"); // surprise color for emails
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [form, setForm] = useState({ name: "", email: "", organization: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  const destination =
+    !user
+      ? "/"
+      : user.role === "organization"
+        ? "/org/dashboard"
+        : user.role === "admin"
+          ? "/admin/dashboard"
+          : "/dashboard";
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    toast({
-      title: "Message Sent",
-      description: "We'll get back to you soon!",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await api.post("/contact", {
+        name: form.name,
+        email: form.email,
+        organization: form.organization || undefined,
+        message: form.message,
+      });
+      setSubmitted(true);
+      toast({
+        title: "We received your inquiry",
+        description: "Thanks for reaching out. We’ll follow up soon.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      setTimeout(() => navigate(destination), 1200);
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Could not send your message";
+      toast({
+        title: msg,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -85,9 +124,30 @@ const Contact = () => {
           onSubmit={handleSubmit}
         >
           <Stack spacing={4}>
+            {submitted && (
+              <Box
+                bg={sectionBg}
+                borderRadius="lg"
+                p={4}
+                border="1px solid"
+                borderColor="rgba(26,165,154,0.35)"
+              >
+                <Heading size="sm" color={heroColor} mb={1}>Message submitted</Heading>
+                <Text fontSize="sm" color={bodyText}>
+                  We received your inquiry and emailed a confirmation. We’ll follow up soon.
+                </Text>
+              </Box>
+            )}
             <FormControl isRequired>
               <FormLabel color={headingText}>Name</FormLabel>
-              <Input placeholder="Your name" name="name" autoComplete="name" />
+              <Input
+                placeholder="Your name"
+                name="name"
+                autoComplete="name"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                isDisabled={submitting}
+              />
             </FormControl>
 
             <FormControl isRequired>
@@ -97,6 +157,9 @@ const Contact = () => {
                 name="email"
                 placeholder="you@example.com"
                 autoComplete="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                isDisabled={submitting}
               />
             </FormControl>
 
@@ -106,6 +169,9 @@ const Contact = () => {
                 name="organization"
                 placeholder="Nonprofit, school, club, etc."
                 autoComplete="organization"
+                value={form.organization}
+                onChange={(e) => setForm((f) => ({ ...f, organization: e.target.value }))}
+                isDisabled={submitting}
               />
             </FormControl>
 
@@ -116,11 +182,14 @@ const Contact = () => {
                 rows={5}
                 placeholder="How can we help?"
                 autoComplete="off"
+                value={form.message}
+                onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                isDisabled={submitting}
               />
             </FormControl>
 
-            <Button type="submit" mt={2}>
-              Send Message
+            <Button type="submit" mt={2} colorScheme="teal" isLoading={submitting} isDisabled={submitting}>
+              {submitting ? "Sending..." : "Send Message"}
             </Button>
           </Stack>
         </Box>

@@ -36,6 +36,7 @@ class BaseConfig:
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     PROPAGATE_EXCEPTIONS = True
     CERTIFICATES_DIR = os.getenv("CERTIFICATES_DIR", str(INSTANCE_DIR / "certificates"))
+    CONTACT_INBOX = os.getenv("CONTACT_INBOX")
 
 
 class DevelopmentConfig(BaseConfig):

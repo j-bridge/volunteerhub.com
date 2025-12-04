@@ -8,7 +8,6 @@ import {
   Button,
   VStack,
   Link,
-  useToast,
   FormControl,
   FormLabel,
   FormErrorMessage,
@@ -22,6 +21,7 @@ import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
+import useAppToast from "../hooks/useAppToast";
 
 
 export default function Login() {
@@ -30,7 +30,7 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const toast = useToast();
+  const toast = useAppToast();
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const location = useLocation();

@@ -17,6 +17,12 @@ certificate_schema = CertificateSchema()
 certificates_schema = CertificateSchema(many=True)
 certificate_create_schema = CertificateCreateSchema()
 
+def _current_user_id() -> int | None:
+    try:
+        return int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return None
+
 
 def _get_user(user_id: int | None) -> User | None:
     if not user_id:
@@ -53,7 +59,7 @@ def issue_certificate():
     except ValidationError as err:
         return jsonify({"error": "Validation error", "details": err.messages}), 400
 
-    issuer = _get_user(get_jwt_identity())
+    issuer = _get_user(_current_user_id())
     if not issuer:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -132,7 +138,7 @@ def issue_certificate():
 @bp.get("/")
 @jwt_required()
 def list_certificates():
-    user = _get_user(get_jwt_identity())
+    user = _get_user(_current_user_id())
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -171,7 +177,7 @@ def retrieve_certificate(certificate_id: int):
     cert = db.session.get(Certificate, certificate_id)
     if not cert:
         return jsonify({"error": "Certificate not found"}), 404
-    user = _get_user(get_jwt_identity())
+    user = _get_user(_current_user_id())
     if not _can_access_certificate(user, cert):
         return jsonify({"error": "Forbidden"}), 403
     return jsonify({"certificate": _serialize_certificate(cert)})
@@ -184,7 +190,7 @@ def download_certificate(certificate_id: int):
     if not cert:
         return jsonify({"error": "Certificate not found"}), 404
 
-    user = _get_user(get_jwt_identity())
+    user = _get_user(_current_user_id())
     if not _can_access_certificate(user, cert):
         return jsonify({"error": "Forbidden"}), 403
 

@@ -14,9 +14,13 @@ def _get_current_user() -> Optional[User]:
     except Exception:
         return None
     identity = get_jwt_identity()
-    if not identity:
+    try:
+        user_id = int(identity) if identity is not None else None
+    except (TypeError, ValueError):
         return None
-    return db.session.get(User, identity)
+    if not user_id:
+        return None
+    return db.session.get(User, user_id)
 
 
 def role_required(*roles: str) -> Callable:

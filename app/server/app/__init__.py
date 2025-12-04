@@ -13,6 +13,7 @@ from .orgs import orgs_bp
 from .admin import admin_bp
 from .videos import videos_bp
 from .certificates import certificates_bp
+from .contact import contact_bp
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -66,6 +67,7 @@ def register_blueprints(app: Flask) -> None:
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(videos_bp, url_prefix="/api/videos")
     app.register_blueprint(certificates_bp, url_prefix="/api/certificates")
+    app.register_blueprint(contact_bp, url_prefix="/api/contact")
 
 
 def register_error_handlers(app: Flask) -> None:

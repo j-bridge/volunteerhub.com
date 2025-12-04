@@ -18,10 +18,10 @@ import {
   Th,
   Thead,
   Tr,
-  useToast,
   Link,
 } from "@chakra-ui/react";
 import { api } from "../../api/client";
+import useAppToast from "../../hooks/useAppToast";
 
 const formatDate = (value) => (value ? new Date(value).toLocaleString() : "—");
 
@@ -31,7 +31,7 @@ export default function AdminCertificates() {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const toast = useToast();
+  const toast = useAppToast();
 
   const [form, setForm] = useState({
     volunteerEmail: "",

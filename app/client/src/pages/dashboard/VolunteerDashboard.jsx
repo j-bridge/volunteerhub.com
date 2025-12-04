@@ -8,7 +8,6 @@ import {
   Text,
   Button,
   Badge,
-  useToast,
   Link,
 } from "@chakra-ui/react";
 import { opportunities } from "../../mock/opportunities";
@@ -16,11 +15,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useColorModeValue } from "@chakra-ui/react";
 import { api } from "../../api/client";
+import useAppToast from "../../hooks/useAppToast";
 
 export default function VolunteerDashboard() {
   const navigate = useNavigate();
   const { user, cancelApplication, removeSavedOpportunity } = useAuth();
-  const toast = useToast();
+  const toast = useAppToast();
   const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
   const panelBg = useColorModeValue("white", "#0b1f24");
   const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");

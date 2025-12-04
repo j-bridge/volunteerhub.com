@@ -9,18 +9,38 @@ import {
   FormLabel,
   Input,
   Textarea,
-  Select,
   Button,
-  useToast,
+  useColorModeValue,
+  HStack,
+  Spacer,
+  IconButton,
+  RadioGroup,
+  Radio,
+  Stack as ChakraStack,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
 } from "@chakra-ui/react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { api } from "../../api/client";
+import { CloseIcon } from "@chakra-ui/icons";
+import useAppToast from "../../hooks/useAppToast";
 
 export default function EditOpportunity() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const toast = useToast();
+  const toast = useAppToast();
   const { user, updateCreatedOpportunity } = useAuth();
+  const pageBg = useColorModeValue("#f2f0eb", "#08141a");
+  const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
+  const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");
+  const textMuted = useColorModeValue("#4a5561", "rgba(231,247,244,0.78)");
+  const borderColor = useColorModeValue("rgba(26,165,154,0.28)", "rgba(26,165,154,0.45)");
 
   const [loaded, setLoaded] = useState(false);
   const [title, setTitle] = useState("");
@@ -29,9 +49,21 @@ export default function EditOpportunity() {
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("Community");
   const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("Open");
+  const [saving, setSaving] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const created = user?.createdOpportunities || [];
   const existing = created.find((o) => String(o.id) === String(id));
+
+  const normalizeDateInput = (value) => {
+    if (!value) return "";
+    if (value.length === 10 && value.includes("-")) return value;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toISOString().slice(0, 10);
+  };
 
   useEffect(() => {
     if (!existing) {
@@ -41,19 +73,56 @@ export default function EditOpportunity() {
 
     setTitle(existing.title || "");
     setOrganization(existing.organization || "");
-    setDate(existing.date || "");
+    setDate(normalizeDateInput(existing.date) || "");
     setLocation(existing.location || "");
     setCategory(existing.category || "Community");
     setDescription(existing.description || "");
+    setStatus(existing.status === "Draft" || existing.is_active === false ? "Draft" : "Open");
     setLoaded(true);
   }, [existing]);
+
+  const saveDraftAndExit = async () => {
+    setClosing(true);
+    try {
+      setShowConfirm(false);
+      await api.patch(`/opportunities/${id}`, {
+        is_active: false,
+      });
+      updateCreatedOpportunity(id, {
+        status: "Draft",
+        is_active: false,
+      });
+      toast({
+        title: "Saved as draft",
+        status: "info",
+        duration: 2500,
+        isClosable: true,
+      });
+      navigate("/org/dashboard");
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Could not save draft";
+      toast({
+        title: msg,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setClosing(false);
+    }
+  };
+
+  const handleExitWithoutSave = () => {
+    setShowConfirm(false);
+    navigate(-1);
+  };
 
   if (!loaded) {
     // small loading state
     return (
-      <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
+      <Box py={16} bg={pageBg} minH="calc(100vh - 160px)">
         <Container maxW="container.md">
-          <Text>Loading opportunity...</Text>
+          <Text color={textMuted}>Loading opportunity...</Text>
         </Container>
       </Box>
     );
@@ -62,10 +131,10 @@ export default function EditOpportunity() {
   if (!existing) {
     // no such opp in this org's local state
     return (
-      <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
+      <Box py={16} bg={pageBg} minH="calc(100vh - 160px)">
         <Container maxW="container.md">
-          <Heading mb={3}>Opportunity not found</Heading>
-          <Text mb={6} color="gray.600">
+          <Heading mb={3} color={textPrimary}>Opportunity not found</Heading>
+          <Text mb={6} color={textMuted}>
             We couldn&apos;t find this opportunity in your created list. It may
             have been removed.
           </Text>
@@ -77,7 +146,7 @@ export default function EditOpportunity() {
     );
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!title || !organization || !date || !location || !description) {
@@ -91,31 +160,67 @@ export default function EditOpportunity() {
       return;
     }
 
-    updateCreatedOpportunity(id, {
-      title,
-      organization,
-      date,
-      location,
-      category,
-      description,
-    });
+    setSaving(true);
+    try {
+      await api.patch(`/opportunities/${id}`, {
+        title,
+        description,
+        location,
+        start_date: new Date(date).toISOString(),
+        is_active: status === "Open",
+      });
 
-    toast({
-      title: "Opportunity updated",
-      description: "Your changes have been saved locally.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+      updateCreatedOpportunity(id, {
+        title,
+        organization,
+        date,
+        location,
+        category,
+        description,
+        status,
+        is_active: status === "Open",
+      });
 
-    navigate("/org/dashboard");
+      toast({
+        title: "Opportunity updated",
+        description: "Changes saved.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      navigate("/org/dashboard");
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Could not update opportunity";
+      toast({
+        title: msg,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
+  const disableAll = saving || closing;
+
   return (
-    <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
+    <Box py={16} bg={pageBg} minH="calc(100vh - 160px)">
       <Container maxW="container.md">
-        <Heading mb={2}>Edit Opportunity</Heading>
-        <Text mb={8} color="gray.600">
+        <HStack mb={2} align="center">
+          <Heading color={textPrimary}>Edit Opportunity</Heading>
+          <Spacer />
+          <IconButton
+            aria-label="Close"
+            icon={<CloseIcon />}
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowConfirm(true)}
+            isDisabled={disableAll}
+          />
+        </HStack>
+        <Text mb={8} color={textMuted}>
           Update the details of your volunteer event. This uses the same fields
           as the create form.
         </Text>
@@ -123,11 +228,12 @@ export default function EditOpportunity() {
         <Box
           as="form"
           onSubmit={handleSubmit}
-          bg="white"
+          bg={cardBg}
           borderWidth="1px"
           borderRadius="lg"
           p={6}
           boxShadow="sm"
+          borderColor={borderColor}
         >
           <Stack spacing={4}>
             <FormControl isRequired>
@@ -168,14 +274,11 @@ export default function EditOpportunity() {
 
             <FormControl>
               <FormLabel>Category</FormLabel>
-              <Select
+              <Input
+                placeholder="Category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="Community">Community</option>
-                <option value="Environment">Environment</option>
-                <option value="Education">Education</option>
-              </Select>
+              />
             </FormControl>
 
             <FormControl isRequired>
@@ -188,16 +291,71 @@ export default function EditOpportunity() {
               />
             </FormControl>
 
-            <Button
-              type="submit"
-              colorScheme="teal"
-              mt={2}
-              alignSelf="flex-start"
-            >
-              Save Changes
-            </Button>
+            <FormControl>
+              <FormLabel>Status</FormLabel>
+              <RadioGroup
+                onChange={(val) => setStatus(val)}
+                value={status}
+              >
+                <ChakraStack direction="row" spacing={6}>
+                  <Radio value="Open">Open</Radio>
+                  <Radio value="Draft">Draft</Radio>
+                </ChakraStack>
+              </RadioGroup>
+            </FormControl>
+
+            <HStack spacing={4}>
+              <Button
+                type="submit"
+                colorScheme="teal"
+                mt={2}
+                alignSelf="flex-start"
+                isLoading={saving}
+                isDisabled={disableAll}
+              >
+                Save Changes
+              </Button>
+              <Button
+                variant="ghost"
+                mt={2}
+                alignSelf="flex-start"
+                onClick={() => setShowConfirm(true)}
+                isDisabled={disableAll}
+              >
+                Cancel
+              </Button>
+            </HStack>
           </Stack>
         </Box>
+
+        <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} isCentered>
+          <ModalOverlay />
+          <ModalContent bg={cardBg} borderColor={borderColor} borderWidth="1px">
+            <ModalHeader color={textPrimary}>Save as draft before exiting?</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Text color={textMuted}>
+                You have unsaved edits. Save this opportunity as a draft or exit without saving.
+              </Text>
+            </ModalBody>
+            <ModalFooter gap={3}>
+              <Button
+                variant="ghost"
+                onClick={handleExitWithoutSave}
+                isDisabled={closing}
+              >
+                Exit without saving
+              </Button>
+              <Button
+                colorScheme="teal"
+                onClick={saveDraftAndExit}
+                isLoading={closing}
+              >
+                Save as draft
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Container>
     </Box>
   );

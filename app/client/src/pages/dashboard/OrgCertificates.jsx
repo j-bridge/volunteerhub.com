@@ -18,10 +18,11 @@ import {
   Th,
   Thead,
   Tr,
-  useToast,
   Link,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { api } from "../../api/client";
+import useAppToast from "../../hooks/useAppToast";
 
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "—");
 
@@ -31,7 +32,12 @@ export default function OrgCertificates() {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const toast = useToast();
+  const toast = useAppToast();
+  const pageBg = useColorModeValue("gray.50", "#0a121a");
+  const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
+  const borderColor = useColorModeValue("rgba(26,165,154,0.25)", "rgba(26,165,154,0.45)");
+  const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");
+  const textMuted = useColorModeValue("#4a5561", "rgba(231,247,244,0.78)");
 
   const [form, setForm] = useState({
     volunteerEmail: "",
@@ -138,15 +144,15 @@ export default function OrgCertificates() {
   }, [selectedOrg]);
 
   return (
-    <Box bg="gray.50" minH="100vh" py={{ base: 10, md: 16 }}>
+    <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }}>
       <Container maxW="6xl">
         <Stack spacing={8}>
-          <Heading size="2xl">Issue Certificates</Heading>
-          <Text color="gray.600">
+          <Heading size="2xl" color={textPrimary}>Issue Certificates</Heading>
+          <Text color={textMuted}>
             Create and email completion certificates to volunteers on behalf of your organization.
           </Text>
 
-          <Box p={6} bg="white" rounded="xl" shadow="md" borderWidth="1px">
+          <Box p={6} bg={cardBg} rounded="xl" shadow="md" borderWidth="1px" borderColor={borderColor}>
             <form onSubmit={handleIssue}>
               <Stack spacing={4}>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
@@ -223,14 +229,14 @@ export default function OrgCertificates() {
             </form>
           </Box>
 
-          <Box p={6} bg="white" rounded="xl" shadow="md" borderWidth="1px">
+          <Box p={6} bg={cardBg} rounded="xl" shadow="md" borderWidth="1px" borderColor={borderColor}>
             <Stack direction={{ base: "column", md: "row" }} justify="space-between" align="center" mb={3}>
-              <Heading size="md">Recent Certificates</Heading>
+              <Heading size="md" color={textPrimary}>Recent Certificates</Heading>
               <Button size="sm" variant="outline" onClick={loadCertificates} isLoading={loading}>
                 Refresh
               </Button>
             </Stack>
-            <Table size="sm">
+            <Table size="sm" color={textPrimary}>
               <Thead>
                 <Tr>
                   <Th>ID</Th>

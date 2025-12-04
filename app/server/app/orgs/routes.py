@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from ..extensions import db
 from ..models import Organization
-from ..permissions import role_required
+from ..permissions import role_required, org_admin_or_site_admin_required
 from ..schemas import OrganizationSchema, OrganizationCreateSchema
 from marshmallow import ValidationError
 
@@ -46,7 +46,7 @@ def retrieve_organization(organization_id: int):
 
 @bp.patch("/<int:organization_id>")
 @jwt_required()
-@role_required("admin")
+@org_admin_or_site_admin_required("organization_id")
 def update_organization(organization_id: int):
     organization = db.session.get(Organization, organization_id)
     if not organization:

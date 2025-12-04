@@ -10,6 +10,7 @@ import {
   Tag,
   Button,
   Badge,
+  useColorModeValue,
 } from "@chakra-ui/react";
 
 const OpportunityCard = ({
@@ -30,6 +31,12 @@ const OpportunityCard = ({
   applying = false,
   selected = false,
 }) => {
+  const cardTextSecondary = useColorModeValue("gray.600", "rgba(255,255,255,0.82)");
+  const cardTextPrimary = useColorModeValue("gray.800", "rgba(255,255,255,0.9)");
+  const dateColor = useColorModeValue("gray.700", "rgba(255,255,255,0.92)");
+  const tagBg = useColorModeValue("rgba(0,0,0,0.04)", "rgba(255,255,255,0.12)");
+  const tagColor = useColorModeValue("gray.700", "#e5ecf5");
+
   return (
     <Box
       className="opportunity-card"
@@ -47,7 +54,7 @@ const OpportunityCard = ({
             <Heading size="md" mb={1} color="var(--vh-heading)">
               {title}
             </Heading>
-            <Text fontSize="sm" color="gray.600">
+            <Text fontSize="sm" color={cardTextSecondary} className="opp-text-secondary">
               {organization}
             </Text>
           </Box>
@@ -58,23 +65,27 @@ const OpportunityCard = ({
           )}
         </HStack>
 
-        <HStack spacing={4} fontSize="sm" color="gray.600" flexWrap="wrap">
+        <HStack spacing={4} fontSize="sm" color={cardTextSecondary} className="opp-text-secondary" flexWrap="wrap">
           <Badge variant="subtle" colorScheme="blue">
             {location}
           </Badge>
-          <Text color="#2c3e50" fontWeight="600">
+          <Text color={dateColor} fontWeight="600">
             {date}
           </Text>
         </HStack>
 
-        <Text fontSize="sm" color="gray.700" noOfLines={3}>
+        <Text fontSize="sm" color={cardTextPrimary} noOfLines={3} className="opp-text-primary">
           {description}
         </Text>
 
         {tags.length > 0 && (
           <HStack className="opportunity-tags" spacing={2}>
             {tags.map((tag) => (
-              <span key={tag} className="opportunity-tag">
+              <span
+                key={tag}
+                className="opportunity-tag"
+                style={{ background: tagBg, color: tagColor }}
+              >
                 {tag}
               </span>
             ))}

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from ..extensions import db
-from ..models import Opportunity
+from ..models import Opportunity, Organization, User
 from ..permissions import org_admin_or_site_admin_required
 from ..schemas import OpportunitySchema, OpportunityCreateSchema, OpportunityUpdateSchema
 from marshmallow import ValidationError
@@ -38,7 +38,40 @@ def create_opportunity():
     except ValidationError as err:
         return jsonify({"error": "Validation error", "details": err.messages}), 400
 
-    opp = Opportunity(**data)
+    try:
+        current_user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    current_user = db.session.get(User, current_user_id)
+    claims = get_jwt()
+
+    if not data.get("org_id"):
+        # Auto-attach to the org owned by this user
+        owned_org = Organization.query.filter_by(owner_id=current_user.id).first()
+        if owned_org:
+            data["org_id"] = owned_org.id
+        else:
+            return jsonify({"error": "Organization id is required"}), 400
+
+    # Only allow non-admins to create within their org
+    if claims.get("role") != "admin":
+        org = db.session.get(Organization, data["org_id"])
+        if not org or org.owner_id != current_user.id:
+            return jsonify({"error": "Forbidden"}), 403
+
+    # Drop non-model fields that may be present in the payload/schema
+    allowed_fields = {
+        "title",
+        "description",
+        "location",
+        "start_date",
+        "end_date",
+        "org_id",
+    }
+    filtered_data = {k: v for k, v in data.items() if k in allowed_fields}
+
+    opp = Opportunity(**filtered_data)
     db.session.add(opp)
     db.session.commit()
     return jsonify({"opportunity": opportunity_schema.dump(opp)}), 201

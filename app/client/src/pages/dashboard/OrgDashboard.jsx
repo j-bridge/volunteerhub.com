@@ -7,15 +7,17 @@ import {
   SimpleGrid,
   Button,
   Badge,
-  useToast,
   useColorModeValue,
-} from "@chakra-ui/react";
+  } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useEffect, useState, useMemo } from "react";
+import { api } from "../../api/client";
+import useAppToast from "../../hooks/useAppToast";
 
 export default function OrgDashboard() {
   const navigate = useNavigate();
-  const toast = useToast();
+  const toast = useAppToast();
   const { user, deleteCreatedOpportunity } = useAuth();
   const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
   const panelBg = useColorModeValue("white", "#0b1f24");
@@ -23,27 +25,82 @@ export default function OrgDashboard() {
   const textMuted = useColorModeValue("#4a5561", "rgba(231,247,244,0.72)");
   const borderColor = useColorModeValue("rgba(26,165,154,0.25)", "rgba(26,165,154,0.4)");
 
-  const orgEvents = user?.createdOpportunities || [];
+  const [orgEvents, setOrgEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const loadOrgEvents = async () => {
+    if (!user?.organization_id) return;
+    setLoading(true);
+    try {
+      const res = await api.get("/opportunities", {
+        params: { org_id: user.organization_id },
+      });
+      const mapped =
+        res.data?.opportunities?.map((opp) => ({
+          id: opp.id,
+          title: opp.title,
+          location: opp.location,
+          date: opp.start_date || opp.created_at,
+          status: opp.is_active ? "Open" : "Draft",
+        })) || [];
+      setOrgEvents(mapped);
+    } catch (err) {
+      toast({
+        title: "Could not load your opportunities",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrgEvents();
+  }, [user?.organization_id]);
+
+  const mergedEvents = useMemo(() => {
+    // Merge locally cached created opportunities for instant feedback
+    const byId = new Map();
+    (orgEvents || []).forEach((e) => byId.set(String(e.id), e));
+    (user?.createdOpportunities || []).forEach((e) => {
+      if (!byId.has(String(e.id))) byId.set(String(e.id), e);
+    });
+    return Array.from(byId.values());
+  }, [orgEvents, user?.createdOpportunities]);
 
   const handleEdit = (evt) => {
     // Go to a dedicated edit page with the same form UI as "Create"
     navigate(`/org/opportunities/${evt.id}/edit`);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const ok = window.confirm(
       "Delete this opportunity? This cannot be undone."
     );
     if (!ok) return;
 
-    deleteCreatedOpportunity(id);
+    try {
+      await api.delete(`/opportunities/${id}`);
+      deleteCreatedOpportunity(id);
+      setOrgEvents((cur) => cur.filter((o) => String(o.id) !== String(id)));
 
-    toast({
-      title: "Opportunity deleted",
-      status: "info",
-      duration: 2500,
-      isClosable: true,
-    });
+      toast({
+        title: "Opportunity deleted",
+        status: "info",
+        duration: 2500,
+        isClosable: true,
+      });
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Could not delete opportunity";
+      toast({
+        title: msg,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
@@ -78,14 +135,14 @@ export default function OrgDashboard() {
           <Heading size="lg" mb={4} color={textPrimary}>
             Current Events
           </Heading>
-          {orgEvents.length === 0 ? (
+          {mergedEvents.length === 0 ? (
             <Text color={textMuted}>
               You don&apos;t have any posted events yet. Create your first
               opportunity above.
             </Text>
           ) : (
             <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-              {orgEvents.map((evt) => (
+              {mergedEvents.map((evt) => (
                 <Box
                   key={evt.id}
                   p={4}

@@ -18,7 +18,13 @@ def test_certificate_issue_and_download(client, app):
 
     client.post(
         "/api/auth/register",
-        json={"email": "org@example.com", "password": "Passw0rd!", "role": "organization", "name": "Org Manager"},
+        json={
+            "email": "org@example.com",
+            "password": "Passw0rd!",
+            "role": "organization",
+            "name": "Org Manager",
+            "organization_name": "Helping Hands",
+        },
     )
     client.post(
         "/api/auth/register",

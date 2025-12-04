@@ -22,15 +22,12 @@ export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Dark mode color values
   const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
   const textPrimary = useColorModeValue("gray.700", "var(--vh-ink-text)");
   const textSecondary = useColorModeValue("gray.600", "rgba(231,247,244,0.7)");
   const borderColor = useColorModeValue("rgba(52,152,219,0.12)", "rgba(15,108,95,0.3)");
   const highlightBg = useColorModeValue("rgba(52,152,219,0.06)", "rgba(15,108,95,0.12)");
   const highlightBorder = useColorModeValue("rgba(52,152,219,0.15)", "rgba(15,108,95,0.35)");
-  const statBg = useColorModeValue("white", "#0b1f24");
-  const statBorder = useColorModeValue("rgba(52,152,219,0.15)", "rgba(15,108,95,0.4)");
   const accent = useColorModeValue("#1aa59a", "#0f6c5f");
 
   const handleJourneySelect = (role) => {
@@ -202,54 +199,53 @@ export default function Home() {
               Continue reading
             </Button>
           </Box>
-        <Box
-          bg={cardBg}
-          p={6}
-          borderRadius="xl"
-          boxShadow="md"
-          border={`1px solid ${borderColor}`}
-        >
-          <Heading size="md" mb={3} color="var(--vh-heading)">
-            Preview Opportunities
-          </Heading>
-          <Box mt={4} p={4} bg={highlightBg} borderRadius="lg" border={`1px solid ${highlightBorder}`}>
-            <Heading size="sm" mb={3} color="var(--vh-heading)">
-              Opportunities Preview
+          <Box
+            bg={cardBg}
+            p={6}
+            borderRadius="xl"
+            boxShadow="md"
+            border={`1px solid ${borderColor}`}
+          >
+            <Heading size="md" mb={3} color="var(--vh-heading)">
+              Preview Opportunities
             </Heading>
-            <Stack spacing={3}>
-              {featuredOpps.map((opp) => (
-                <Box key={opp.id} p={3} borderRadius="md" bg={cardBg} border={`1px solid ${borderColor}`}>
-                  <HStack justify="space-between">
-                    <Text fontWeight="700">{opp.title}</Text>
-                    <Badge colorScheme="blue">{new Date(opp.date).toLocaleDateString()}</Badge>
-                  </HStack>
-                  <Text fontSize="sm" color={textSecondary}>
-                    {opp.organization} • {opp.location}
-                  </Text>
-                  <Text fontSize="sm" color={textPrimary} noOfLines={2}>
-                    {opp.description}
-                  </Text>
-                  <Button
-                    size="sm"
-                    mt={2}
-                    alignSelf="flex-start"
-                    variant="outline"
-                    color={accent}
-                    borderColor={accent}
-                    onClick={() => navigate(`/opportunities/${opp.id}`)}
-                  >
-                    View
-                  </Button>
-                </Box>
-              ))}
-            </Stack>
-            <Button mt={4} colorScheme="blue" w="100%" onClick={() => navigate("/opportunities")}>
-              View all opportunities
+            <Box mt={4} p={4} bg={highlightBg} borderRadius="lg" border={`1px solid ${highlightBorder}`}>
+              <Heading size="sm" mb={3} color="var(--vh-heading)">
+                Opportunities Preview
+              </Heading>
+              <Stack spacing={3}>
+                {featuredOpps.map((opp) => (
+                  <Box key={opp.id} p={3} borderRadius="md" bg={cardBg} border={`1px solid ${borderColor}`}>
+                    <HStack justify="space-between">
+                      <Text fontWeight="700">{opp.title}</Text>
+                      <Badge colorScheme="blue">{new Date(opp.date).toLocaleDateString()}</Badge>
+                    </HStack>
+                    <Text fontSize="sm" color={textSecondary}>
+                      {opp.organization} • {opp.location}
+                    </Text>
+                    <Text fontSize="sm" color={textPrimary} noOfLines={2}>
+                      {opp.description}
+                    </Text>
+                    <Button
+                      size="sm"
+                      mt={2}
+                      alignSelf="flex-start"
+                      variant="outline"
+                      color={accent}
+                      borderColor={accent}
+                      onClick={() => navigate(`/opportunities/${opp.id}`)}
+                    >
+                      View
+                    </Button>
+                  </Box>
+                ))}
+              </Stack>
+              <Button mt={4} colorScheme="blue" w="100%" onClick={() => navigate("/opportunities")}>
+                View all opportunities
               </Button>
             </Box>
           </Box>
         </SimpleGrid>
-
       </Container>
     </Box>
   );
@@ -259,7 +255,7 @@ function StatPill({ label, value }) {
   const statBg = useColorModeValue("white", "#0b1f24");
   const statBorder = useColorModeValue("rgba(52,152,219,0.15)", "rgba(15,108,95,0.4)");
   const textSecondary = useColorModeValue("gray.600", "rgba(231,247,244,0.7)");
-  
+
   return (
     <Box
       px={4}
@@ -281,7 +277,7 @@ function StatPill({ label, value }) {
 
 function HighlightItem({ title, desc }) {
   const textSecondary = useColorModeValue("gray.600", "rgba(231,247,244,0.7)");
-  
+
   return (
     <Box>
       <Text fontWeight="700" color="var(--vh-heading)">
@@ -298,7 +294,7 @@ function StepCard({ title, desc }) {
   const highlightBg = useColorModeValue("rgba(52,152,219,0.06)", "rgba(15,108,95,0.12)");
   const highlightBorder = useColorModeValue("rgba(52,152,219,0.12)", "rgba(15,108,95,0.3)");
   const textPrimary = useColorModeValue("gray.700", "var(--vh-ink-text)");
-  
+
   return (
     <Box bg={highlightBg} p={5} borderRadius="lg" border={`1px solid ${highlightBorder}`}>
       <Heading size="sm" mb={2} color="var(--vh-heading)">

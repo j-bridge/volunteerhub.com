@@ -13,11 +13,19 @@ applications_schema = ApplicationSchema(many=True)
 application_create_schema = ApplicationCreateSchema()
 application_review_schema = ApplicationReviewSchema()
 
+def _current_user_id() -> int | None:
+    try:
+        return int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return None
+
 
 @bp.get("/my")
 @jwt_required()
 def my_applications():
-    user_id = get_jwt_identity()
+    user_id = _current_user_id()
+    if user_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
     apps = Application.query.filter_by(user_id=user_id).order_by(Application.created_at.desc()).all()
     return jsonify({"applications": applications_schema.dump(apps)})
 
@@ -29,7 +37,9 @@ def create_application():
         data = application_create_schema.load(request.get_json() or {})
     except ValidationError as err:
         return jsonify({"error": "Validation error", "details": err.messages}), 400
-    user_id = get_jwt_identity()
+    user_id = _current_user_id()
+    if user_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
     opp_id = data.get("opportunity_id")
 
     existing = Application.query.filter_by(user_id=user_id, opportunity_id=opp_id).first()
@@ -98,7 +108,9 @@ def review_application(application_id):
 @bp.patch("/<int:application_id>/withdraw")
 @jwt_required()
 def withdraw_application(application_id):
-    user_id = get_jwt_identity()
+    user_id = _current_user_id()
+    if user_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
     app = Application.query.filter_by(id=application_id, user_id=user_id).first()
     if not app:
         return jsonify({"error": "Not found"}), 404

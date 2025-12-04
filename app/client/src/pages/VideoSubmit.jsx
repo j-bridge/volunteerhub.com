@@ -13,10 +13,10 @@ import {
   Stack,
   Text,
   Textarea,
-  useToast,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import useAppToast from "../hooks/useAppToast";
 
 export default function VideoSubmit() {
   const [title, setTitle] = useState("");
@@ -24,7 +24,7 @@ export default function VideoSubmit() {
   const [description, setDescription] = useState("");
   const [opportunityId, setOpportunityId] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const toast = useToast();
+  const toast = useAppToast();
   const navigate = useNavigate();
 
   const titleValid = title.trim().length >= 3;

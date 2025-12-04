@@ -1,4 +1,5 @@
 import { opportunities as mockOpportunities } from "../../mock/opportunities";
+import { api } from "../../api/client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
@@ -12,13 +13,13 @@ import {
   Button,
   useColorModeValue,
   useBreakpointValue,
-  useToast,
   Badge,
   Image,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import OpportunityCard from "./OpportunityCard";
 import { useAuth } from "../../context/AuthContext";
+import useAppToast from "../../hooks/useAppToast";
 
 const normalizeText = (text = "") =>
   text
@@ -68,6 +69,8 @@ const Opportunities = () => {
   const [selectedOpp, setSelectedOpp] = useState(null);
   const [applyingId, setApplyingId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [apiOpportunities, setApiOpportunities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const pageBg = useColorModeValue("#f2f0eb", "#08141a");
   const surfaceBg = useColorModeValue("#f8f6f2", "var(--vh-ink-soft)");
@@ -99,14 +102,63 @@ const Opportunities = () => {
   const buttonHover = useColorModeValue("#1fb9ae", "#0f7c70");
   const isMobile = useBreakpointValue({ base: true, lg: false });
   const [filterState, setFilterState] = useState("expanded"); // expanded | condensed | hidden
-  const toast = useToast();
+  const toast = useAppToast();
   const navigate = useNavigate();
   const { user, applyToOpportunity } = useAuth();
+
+  const normalizeApiOpp = (opp) => ({
+    id: opp.id,
+    title: opp.title,
+    organization: opp.organization?.name || (opp.org_id ? `Organization #${opp.org_id}` : "Organization"),
+    date: opp.start_date || opp.created_at || new Date().toISOString(),
+    location: opp.location || "TBD",
+    category: opp.category || "Community",
+    description: opp.description || "",
+    tags: [],
+    mode: opp.mode || "In-person",
+    timeCommitment: opp.timeCommitment,
+    spotsRemaining: opp.spotsRemaining,
+  });
+
+  const loadApiOpportunities = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get("/opportunities");
+      const mapped = (res.data?.opportunities || []).map(normalizeApiOpp);
+      setApiOpportunities(mapped);
+    } catch (err) {
+      toast({
+        title: "Could not load live opportunities",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    loadApiOpportunities();
+  }, [loadApiOpportunities]);
+
+  const combinedOpportunities = useMemo(() => {
+    const ids = new Set();
+    const merged = [];
+    apiOpportunities.forEach((o) => {
+      ids.add(String(o.id));
+      merged.push(o);
+    });
+    mockOpportunities.forEach((o) => {
+      if (!ids.has(String(o.id))) merged.push(o);
+    });
+    return merged;
+  }, [apiOpportunities]);
 
   const filteredOpportunities = useMemo(() => {
     const now = new Date();
 
-    return mockOpportunities.filter((opp) => {
+    return combinedOpportunities.filter((opp) => {
       const matchesSearch =
         searchTerm.trim().length === 0 ||
         fuzzyIncludes(searchTerm, opp.title) ||
@@ -134,7 +186,7 @@ const Opportunities = () => {
 
       return matchesSearch && matchesCategory && matchesLocation && matchesMode && matchesDate;
     });
-  }, [searchTerm, category, location, dateRange, mode]);
+  }, [searchTerm, category, location, dateRange, mode, combinedOpportunities]);
 
   useEffect(() => {
     if (!selectedOpp && filteredOpportunities.length > 0) {
@@ -210,7 +262,7 @@ const Opportunities = () => {
   };
 
   const uniqueLocations = Array.from(
-    new Set(mockOpportunities.map((o) => o.location))
+    new Set(combinedOpportunities.map((o) => o.location))
   );
 
   // Live filter listener per requirements (client-side DOM toggle)

@@ -1,6 +1,17 @@
-from marshmallow import Schema, fields, validate, validates_schema, ValidationError
+from marshmallow import Schema, fields, validate, validates_schema, ValidationError, pre_load
 from .extensions import ma
 from .models import User, Organization, Opportunity, Application, VideoSubmission, Certificate
+
+
+# Misc / contact
+class ContactSchema(Schema):
+    class Meta:
+        unknown = "exclude"
+
+    name = fields.String(required=True, validate=validate.Length(min=2, max=255))
+    email = fields.Email(required=True)
+    organization = fields.String(required=False, allow_none=True, validate=validate.Length(max=255))
+    message = fields.String(required=True, validate=validate.Length(min=5, max=4000))
 
 
 # Response schemas
@@ -15,6 +26,8 @@ class UserSchema(ma.SQLAlchemySchema):
     name = ma.auto_field()
     role = ma.auto_field()
     created_at = ma.auto_field()
+    organization_id = ma.Function(lambda obj: obj.organization.id if getattr(obj, "organization", None) else None)
+    organization_name = ma.Function(lambda obj: obj.organization.name if getattr(obj, "organization", None) else None)
 
 
 class OrganizationSchema(ma.SQLAlchemySchema):
@@ -45,6 +58,8 @@ class OpportunitySchema(ma.SQLAlchemySchema):
     end_date = ma.auto_field()
     org_id = ma.auto_field()
     created_at = ma.auto_field()
+    is_active = ma.auto_field()
+    organization = ma.Nested("OrganizationSchema", only=("id", "name", "contact_email"), dump_only=True)
 
 
 class ApplicationSchema(ma.SQLAlchemySchema):
@@ -70,6 +85,7 @@ class RegisterSchema(Schema):
         validate=validate.OneOf(["volunteer", "organization"]),
         load_default="volunteer",
     )
+    organization_name = fields.String(required=False, allow_none=True, validate=validate.Length(min=2, max=255))
 
 
 class LoginSchema(Schema):
@@ -103,12 +119,19 @@ class OrganizationCreateSchema(Schema):
 
 
 class OpportunityCreateSchema(Schema):
+    class Meta:
+        unknown = "exclude"
+
     title = fields.String(required=True, validate=validate.Length(min=3, max=255))
     description = fields.String(required=False, allow_none=True)
     location = fields.String(required=False, allow_none=True, validate=validate.Length(max=255))
     start_date = fields.DateTime(required=False, allow_none=True)
     end_date = fields.DateTime(required=False, allow_none=True)
-    org_id = fields.Integer(required=True)
+    org_id = fields.Integer(required=False, allow_none=True)
+    category = fields.String(required=False, allow_none=True)
+    mode = fields.String(required=False, allow_none=True)
+    time_commitment = fields.String(required=False, allow_none=True)
+    spots_remaining = fields.Integer(required=False, allow_none=True)
 
     @validates_schema
     def validate_dates(self, data, **kwargs):
@@ -117,8 +140,22 @@ class OpportunityCreateSchema(Schema):
         if start and end and end < start:
             raise ValidationError("end_date must be after start_date", field_name="end_date")
 
+    @pre_load
+    def coerce_empty_strings(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+        for key in ("start_date", "end_date", "location", "description", "mode", "category", "time_commitment"):
+            if key in data and data[key] == "":
+                data[key] = None
+        if "org_id" in data and data["org_id"] == "":
+            data["org_id"] = None
+        return data
+
 
 class OpportunityUpdateSchema(Schema):
+    class Meta:
+        unknown = "exclude"
+
     title = fields.String(required=False, validate=validate.Length(min=3, max=255))
     description = fields.String(required=False, allow_none=True)
     location = fields.String(required=False, allow_none=True, validate=validate.Length(max=255))
@@ -126,6 +163,10 @@ class OpportunityUpdateSchema(Schema):
     end_date = fields.DateTime(required=False, allow_none=True)
     org_id = fields.Integer(required=False)
     is_active = fields.Boolean(required=False)
+    category = fields.String(required=False, allow_none=True)
+    mode = fields.String(required=False, allow_none=True)
+    time_commitment = fields.String(required=False, allow_none=True)
+    spots_remaining = fields.Integer(required=False, allow_none=True)
 
     @validates_schema
     def validate_dates(self, data, **kwargs):
@@ -133,6 +174,17 @@ class OpportunityUpdateSchema(Schema):
         end = data.get("end_date")
         if start and end and end < start:
             raise ValidationError("end_date must be after start_date", field_name="end_date")
+
+    @pre_load
+    def coerce_empty_strings(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+        for key in ("start_date", "end_date", "location", "description", "mode", "category", "time_commitment"):
+            if key in data and data[key] == "":
+                data[key] = None
+        if "org_id" in data and data["org_id"] == "":
+            data["org_id"] = None
+        return data
 
 
 class ApplicationCreateSchema(Schema):

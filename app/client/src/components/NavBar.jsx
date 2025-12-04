@@ -97,6 +97,7 @@ export default function NavBar() {
               px={3}
               py={2}
               borderRadius="md"
+              className="vh-nav-link"
               color={isActive(item.to) ? activeColor : linkColor}
               _hover={{
                 boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
@@ -129,27 +130,28 @@ export default function NavBar() {
                     ? "/admin/dashboard"
                     : "/dashboard"
               }
-              fontWeight="500"
+                fontWeight="500"
+              className="vh-nav-link"
             >
               My Dashboard
             </Link>
           )}
           {user && (
-            <Link as={RouterLink} to="/account" fontWeight="500">
+            <Link as={RouterLink} to="/account" fontWeight="500" className="vh-nav-link">
               Account
             </Link>
           )}
           {user?.role === "organization" && (
-            <Link as={RouterLink} to="/org/certificates" fontWeight="500">
+            <Link as={RouterLink} to="/org/certificates" fontWeight="500" className="vh-nav-link">
               Certificates
             </Link>
           )}
           {user?.role === "admin" && (
             <>
-              <Link as={RouterLink} to="/admin/dashboard" fontWeight="600" color="teal.600">
+              <Link as={RouterLink} to="/admin/dashboard" fontWeight="600" color="teal.600" className="vh-nav-link">
                 Admin
               </Link>
-              <Link as={RouterLink} to="/admin/certificates" fontWeight="500">
+              <Link as={RouterLink} to="/admin/certificates" fontWeight="500" className="vh-nav-link">
                 Certs
               </Link>
             </>

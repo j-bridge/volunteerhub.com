@@ -18,6 +18,12 @@ videos_schema = VideoSubmissionSchema(many=True)
 create_schema = VideoSubmissionCreateSchema()
 status_schema = VideoSubmissionStatusSchema()
 
+def _current_user_id() -> int | None:
+    try:
+        return int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return None
+
 
 def _claims():
     """
@@ -50,7 +56,9 @@ def list_videos():
 @bp.get("/my")
 @jwt_required()
 def my_videos():
-    user_id = get_jwt_identity()
+    user_id = _current_user_id()
+    if user_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
     vids = VideoSubmission.query.filter_by(user_id=user_id).order_by(VideoSubmission.created_at.desc()).all()
     return jsonify({"videos": videos_schema.dump(vids)})
 
@@ -69,8 +77,12 @@ def create_video():
         if not opp:
             return jsonify({"error": "Opportunity not found"}), 404
 
+    user_id = _current_user_id()
+    if user_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
+
     video = VideoSubmission(
-        user_id=get_jwt_identity(),
+        user_id=user_id,
         opportunity_id=opp_id,
         title=payload["title"],
         description=payload.get("description"),

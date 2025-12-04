@@ -11,24 +11,30 @@ import {
   Textarea,
   Select,
   Button,
-  useToast,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { api } from "../../api/client";
+import { useColorModeValue } from "@chakra-ui/react";
+import useAppToast from "../../hooks/useAppToast";
 
 export default function CreateOpportunity() {
   const [title, setTitle] = useState("");
-  const [organization, setOrganization] = useState("");
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
   const [category, setCategory] = useState("Community");
   const [description, setDescription] = useState("");
 
-  const toast = useToast();
+  const toast = useAppToast();
   const navigate = useNavigate();
   const { user, createOpportunity } = useAuth();
+  const pageBg = useColorModeValue("gray.50", "#0b1220");
+  const cardBg = useColorModeValue("white", "#0f1c2b");
+  const textPrimary = useColorModeValue("gray.800", "gray.100");
+  const textMuted = useColorModeValue("gray.600", "gray.300");
+  const borderColor = useColorModeValue("gray.200", "rgba(255,255,255,0.12)");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!user || user.role !== "organization") {
@@ -43,7 +49,7 @@ export default function CreateOpportunity() {
       return;
     }
 
-    if (!title || !organization || !date || !location || !description) {
+    if (!title || !date || !location || !description) {
       toast({
         title: "Missing fields",
         description: "Please fill in all required fields.",
@@ -54,35 +60,62 @@ export default function CreateOpportunity() {
       return;
     }
 
-    const payload = {
-      title,
-      organization,
-      date,
-      location,
-      category,
-      description,
-    };
+    if (!user.organization_id) {
+      toast({
+        title: "Organization missing",
+        description: "Your account is missing an organization. Please contact support.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
-    const created = createOpportunity(payload);
-    console.log("Create opportunity (mock):", created);
-
-    toast({
-      title: "Opportunity created",
-      description:
-        "This is stored locally for now. Backend integration will persist it later.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
-
-    navigate("/org/dashboard");
+    try {
+      const res = await api.post("/opportunities/", {
+        title,
+        description,
+        location,
+        category,
+        start_date: new Date(date).toISOString(),
+        org_id: user.organization_id,
+      });
+      const created = res.data?.opportunity;
+      if (created) {
+        // Keep dashboard in sync with the server result
+        createOpportunity({
+          id: created.id,
+          title: created.title,
+          location: created.location,
+          date: created.start_date || created.created_at,
+          status: created.is_active ? "Open" : "Draft",
+        });
+      }
+      toast({
+        title: "Opportunity created",
+        description: "Your opportunity is now live.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate("/opportunities");
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Failed to create opportunity";
+      toast({
+        title: "Error",
+        description: msg,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
-    <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
+    <Box py={16} bg={pageBg} minH="calc(100vh - 160px)" color={textPrimary}>
       <Container maxW="container.md">
         <Heading mb={2}>Create New Opportunity</Heading>
-        <Text mb={8} color="gray.600">
+        <Text mb={8} color={textMuted}>
           Fill out the details for your volunteer event. These fields match the
           opportunities shown on the public listing page.
         </Text>
@@ -90,8 +123,9 @@ export default function CreateOpportunity() {
         <Box
           as="form"
           onSubmit={handleSubmit}
-          bg="white"
+          bg={cardBg}
           borderWidth="1px"
+          borderColor={borderColor}
           borderRadius="lg"
           p={6}
           boxShadow="sm"
@@ -106,12 +140,12 @@ export default function CreateOpportunity() {
               />
             </FormControl>
 
-            <FormControl isRequired>
+            <FormControl isReadOnly>
               <FormLabel>Organization</FormLabel>
               <Input
-                placeholder="e.g. Helping Hands Foundation"
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
+                placeholder="Organization name"
+                value={user?.organization_name || ""}
+                isReadOnly
               />
             </FormControl>
 
@@ -169,5 +203,3 @@ export default function CreateOpportunity() {
     </Box>
   );
 }
-
-

@@ -18,10 +18,10 @@ import {
   Th,
   Thead,
   Tr,
-  useToast,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
+import useAppToast from "../../hooks/useAppToast";
 
 const MetricCard = ({ label, value, helper }) => (
   <Stat p={4} borderWidth="1px" borderRadius="lg" bg="white" shadow="sm">
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const [summary, setSummary] = useState(null);
   const [pendingVideos, setPendingVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
+  const toast = useAppToast();
   const navigate = useNavigate();
 
   const loadSummary = async () => {

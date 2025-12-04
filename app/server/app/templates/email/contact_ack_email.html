@@ -1,0 +1,14 @@
+{% extends "email/base_vhub_email.html" %}
+{% block content %}
+  <p>Hi {{ name or "there" }},</p>
+  <p>Thanks for reaching out to VolunteerHub. We received your message and will follow up soon.</p>
+  <p style="margin:18px 0 8px 0;font-weight:bold;">What you sent:</p>
+  <div style="padding:12px 14px;border:1px solid #1e293b;border-radius:10px;background:#0f172a;">
+    <p style="margin:0 0 6px 0;"><strong>Name:</strong> {{ name }}</p>
+    <p style="margin:0 0 6px 0;"><strong>Email:</strong> {{ email }}</p>
+    {% if organization %}<p style="margin:0 0 6px 0;"><strong>Organization:</strong> {{ organization }}</p>{% endif %}
+    <p style="margin:0;"><strong>Message:</strong><br>{{ message }}</p>
+  </div>
+  <p style="margin-top:18px;">If you need to add anything else, just reply to this email.</p>
+  <p style="margin-top:16px;">— The VolunteerHub Team</p>
+{% endblock %}

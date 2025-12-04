@@ -8,7 +8,6 @@ import {
   Button,
   VStack,
   Link,
-  useToast,
   FormControl,
   FormLabel,
   FormErrorMessage,
@@ -19,14 +18,16 @@ import {
 } from "@chakra-ui/react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import useAppToast from "../hooks/useAppToast";
 
 export default function Signup() {
   const [name, setName] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("volunteer"); // ⬅️ NEW: default to volunteer
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const toast = useToast();
+  const toast = useAppToast();
   const navigate = useNavigate();
   const pageBg = useColorModeValue(
     "linear-gradient(135deg, #f5f1e8, #ede8de)",
@@ -80,6 +81,7 @@ export default function Signup() {
         email,
         password,
         role, // "volunteer" or "organization"
+        organization_name: role === "organization" ? organizationName : undefined,
       });
 
       const data = res.data || {};
@@ -97,6 +99,7 @@ export default function Signup() {
         setEmail("");
         setPassword("");
         setRole("volunteer");
+        setOrganizationName("");
         navigate("/login");
       } else {
         throw new Error(data?.message || "Signup failed");
@@ -189,6 +192,23 @@ export default function Signup() {
                 </HStack>
               </RadioGroup>
             </FormControl>
+
+            {role === "organization" && (
+              <FormControl isRequired>
+                <FormLabel color={inkText}>Organization Name</FormLabel>
+                <Input
+                  placeholder="e.g. Helping Hands Foundation"
+                  value={organizationName}
+                  onChange={(e) => setOrganizationName(e.target.value)}
+                  autoComplete="organization"
+                  bg={inputBg}
+                  color={inkText}
+                  borderColor={borderColor}
+                  _placeholder={{ color: placeholderColor }}
+                  _focus={{ borderColor: inkAccent, boxShadow: `0 0 0 1px ${focusShadow}` }}
+                />
+              </FormControl>
+            )}
 
             <FormControl
               isRequired

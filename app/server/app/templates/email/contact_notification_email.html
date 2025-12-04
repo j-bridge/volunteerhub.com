@@ -1,0 +1,13 @@
+{% extends "email/base_vhub_email.html" %}
+{% block content %}
+  <p>New inquiry received via the Contact form.</p>
+  <ul style="padding-left:18px;line-height:1.5;">
+    <li><strong>Name:</strong> {{ name }}</li>
+    <li><strong>Email:</strong> {{ email }}</li>
+    {% if organization %}<li><strong>Organization:</strong> {{ organization }}</li>{% endif %}
+  </ul>
+  <p style="margin:14px 0 6px 0;"><strong>Message:</strong></p>
+  <div style="padding:12px 14px;border:1px solid #1e293b;border-radius:10px;background:#0f172a;color:#e2e8f0;">
+    {{ message }}
+  </div>
+{% endblock %}

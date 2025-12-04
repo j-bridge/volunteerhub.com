@@ -24,8 +24,10 @@ def password_validation_error(password: str) -> str | None:
 
 def create_token_pair(identity: Any, additional_claims: dict[str, Any] | None = None) -> dict[str, str]:
     claims = additional_claims or {}
-    access_token = create_access_token(identity=identity, additional_claims=claims)
-    refresh_token = create_refresh_token(identity=identity, additional_claims=claims)
+    # PyJWT requires the `sub` claim to be a string; keep the numeric user id but cast to str in the token.
+    str_identity = str(identity)
+    access_token = create_access_token(identity=str_identity, additional_claims=claims)
+    refresh_token = create_refresh_token(identity=str_identity, additional_claims=claims)
     return {"access_token": access_token, "refresh_token": refresh_token}
 
 

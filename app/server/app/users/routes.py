@@ -14,6 +14,12 @@ users_schema = UserSchema(many=True)
 change_role_schema = ChangeRoleSchema()
 user_update_schema = UserUpdateSchema()
 
+def _current_user_id() -> int | None:
+    try:
+        return int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return None
+
 
 @bp.get("/")
 @jwt_required()
@@ -27,7 +33,10 @@ def list_users():
 @bp.get("/me")
 @jwt_required()
 def retrieve_current_user():
-    user = db.session.get(User, get_jwt_identity())
+    user_id = _current_user_id()
+    if user_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify({"user": user_schema.dump(user)})
@@ -36,7 +45,10 @@ def retrieve_current_user():
 @bp.patch("/me")
 @jwt_required()
 def update_current_user():
-    user = db.session.get(User, get_jwt_identity())
+    user_id = _current_user_id()
+    if user_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
+    user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
@@ -80,7 +92,9 @@ def change_user_role(user_id: int):
 @bp.get("/<int:user_id>")
 @jwt_required()
 def retrieve_user(user_id: int):
-    current_id = get_jwt_identity()
+    current_id = _current_user_id()
+    if current_id is None:
+        return jsonify({"error": "Unauthorized"}), 401
     claims = get_jwt()
     if current_id != user_id and claims.get("role") != "admin":
         return jsonify({"error": "Forbidden"}), 403

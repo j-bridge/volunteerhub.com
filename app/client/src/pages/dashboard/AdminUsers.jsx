@@ -16,9 +16,9 @@ import {
   Th,
   Thead,
   Tr,
-  useToast,
 } from "@chakra-ui/react";
 import { api } from "../../api/client";
+import useAppToast from "../../hooks/useAppToast";
 
 const emptyUser = (u = {}) => ({
   id: u.id,
@@ -29,7 +29,7 @@ const emptyUser = (u = {}) => ({
 });
 
 export default function AdminUsers() {
-  const toast = useToast();
+  const toast = useAppToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
