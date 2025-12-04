@@ -23,14 +23,24 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Ensure we can import the server app package
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SERVER_ROOT = PROJECT_ROOT / "app" / "server"
+APP_PACKAGE = SERVER_ROOT / "app"
 
-from app import create_app, db
-from app.models import User, Organization, Opportunity, Application, OrganizationMember
+sys.path.insert(0, str(SERVER_ROOT))
+sys.path.insert(0, str(APP_PACKAGE))
+
+# Clear any previously imported 'app' module that may point elsewhere
+if "app" in sys.modules:
+    del sys.modules["app"]
+
+from app import create_app, db  # type: ignore
+from app.models import User, Organization, Opportunity, Application, organization_members  # type: ignore
+from app.security import hash_password  # type: ignore
 
 # Initialize Flask app
-app = create_app(os.getenv('FLASK_ENV', 'development'))
+app = create_app(os.getenv("FLASK_ENV", "development"))
 
 
 def seed_test_users():
@@ -41,72 +51,38 @@ def seed_test_users():
         {
             'email': 'volunteer.test@example.com',
             'password': 'TestPassword123!',
-            'first_name': 'Alex',
-            'last_name': 'Thompson',
+            'name': 'Alex Thompson',
             'user_type': 'volunteer',
-            'profile_data': {
-                'skills': ['Gardening', 'Event Planning', 'Teaching'],
-                'availability': ['Weekends', 'Evenings'],
-                'bio': 'Passionate about community service and environmental work.'
-            }
         },
         {
             'email': 'volunteer2.test@example.com',
             'password': 'TestPassword123!',
-            'first_name': 'Jordan',
-            'last_name': 'Martinez',
+            'name': 'Jordan Martinez',
             'user_type': 'volunteer',
-            'profile_data': {
-                'skills': ['Web Development', 'Marketing', 'Social Media'],
-                'availability': ['Weekdays', 'Evenings'],
-                'bio': 'Tech enthusiast and nonprofit advocate.'
-            }
         },
         {
             'email': 'orgadmin.test@example.com',
             'password': 'TestPassword123!',
-            'first_name': 'Casey',
-            'last_name': 'Johnson',
+            'name': 'Casey Johnson',
             'user_type': 'org_admin',
-            'profile_data': {
-                'org_name': 'Green Community Initiative',
-                'phone': '555-0100',
-                'bio': 'Leading environmental and community projects.'
-            }
         },
         {
             'email': 'orgadmin2.test@example.com',
             'password': 'TestPassword123!',
-            'first_name': 'Morgan',
-            'last_name': 'Williams',
+            'name': 'Morgan Williams',
             'user_type': 'org_admin',
-            'profile_data': {
-                'org_name': 'Youth Education Alliance',
-                'phone': '555-0101',
-                'bio': 'Empowering youth through education.'
-            }
         },
         {
             'email': 'siteadmin.test@example.com',
             'password': 'AdminPassword123!',
-            'first_name': 'Admin',
-            'last_name': 'User',
+            'name': 'Admin User',
             'user_type': 'site_admin',
-            'profile_data': {
-                'phone': '555-0102',
-                'bio': 'Site administration account.'
-            }
         },
         {
             'email': 'qa.catalina@example.com',
             'password': 'QAPassword123!',
-            'first_name': 'Catalina',
-            'last_name': 'QA',
+            'name': 'Catalina QA',
             'user_type': 'qa',
-            'profile_data': {
-                'phone': '555-0103',
-                'bio': 'QA testing and validation account.'
-            }
         }
     ]
 
@@ -121,17 +97,20 @@ def seed_test_users():
             created_users[email] = existing_user
             continue
 
+        role_map = {
+            "volunteer": "volunteer",
+            "org_admin": "organization",
+            "site_admin": "admin",
+            "qa": "volunteer",
+        }
+        role = role_map.get(user_data["user_type"], "volunteer")
+
         user = User(
             email=email,
-            first_name=user_data['first_name'],
-            last_name=user_data['last_name'],
-            user_type=user_data['user_type']
+            name=user_data.get("name"),
+            role=role,
+            password_hash=hash_password(user_data["password"]),
         )
-        user.set_password(user_data['password'])
-        
-        # Store profile data as JSON if applicable
-        if 'profile_data' in user_data:
-            user.profile_data = user_data['profile_data']
 
         db.session.add(user)
         created_users[email] = user
@@ -194,22 +173,22 @@ def seed_organizations(users):
         org = Organization(
             name=org_name,
             description=org_data['description'],
-            email=org_data['email'],
-            phone=org_data['phone']
+            contact_email=org_data['email'],
         )
         db.session.add(org)
         db.session.flush()  # Get org ID for relationships
 
-        # Add members
+        # Set owner/admin
+        admin_user = users.get(org_data["admin_email"])
+        if admin_user:
+            org.owner_id = admin_user.id
+            org.members.append(admin_user)
+
+        # Add members (role column defaults to 'member')
         for member in org_data['members']:
             user = users.get(member['email'])
             if user:
-                org_member = OrganizationMember(
-                    organization_id=org.id,
-                    user_id=user.id,
-                    role=member['role']
-                )
-                db.session.add(org_member)
+                org.members.append(user)
                 print(f"  ✓ Added {member['email']} to {org_name} as {member['role']}")
 
         created_orgs[org_name] = org
@@ -318,7 +297,7 @@ def seed_opportunities(organizations):
         # Check if opportunity already exists
         existing_opp = Opportunity.query.filter_by(
             title=opp_data['title'],
-            organization_id=org.id
+            org_id=org.id
         ).first()
         if existing_opp:
             print(f"  ✓ Opportunity {opp_key} already exists (skipping)")
@@ -328,15 +307,11 @@ def seed_opportunities(organizations):
         opp = Opportunity(
             title=opp_data['title'],
             description=opp_data['description'],
-            organization_id=org.id,
+            org_id=org.id,
             location=opp_data['location'],
-            date=opp_data['date'],
-            time=opp_data['time'],
-            capacity=opp_data['capacity'],
-            required_skills=opp_data['required_skills'],
-            tags=opp_data['tags'],
-            application_deadline=opp_data['deadline'],
-            status=opp_data['status']
+            start_date=opp_data.get('date'),
+            end_date=None,
+            is_active=opp_data.get('status', 'published') != 'draft'
         )
         db.session.add(opp)
         created_opportunities[opp_key] = opp
@@ -354,30 +329,22 @@ def seed_applications(users, opportunities):
         {
             'volunteer_email': 'volunteer.test@example.com',
             'opportunity_title': 'Community Garden Workday',
-            'message': 'I have 2 years of gardening experience and would love to help!',
             'status': 'pending',
-            'file_path': None
         },
         {
             'volunteer_email': 'volunteer2.test@example.com',
             'opportunity_title': 'After-School Tutoring Program',
-            'message': 'I am a software engineer with experience mentoring students.',
             'status': 'pending',
-            'file_path': None
         },
         {
             'volunteer_email': 'volunteer.test@example.com',
             'opportunity_title': 'Weekend Food Distribution',
-            'message': 'Happy to help out with food distribution!',
             'status': 'accepted',
-            'file_path': None
         },
         {
             'volunteer_email': 'volunteer2.test@example.com',
             'opportunity_title': 'Community Garden Workday',
-            'message': 'I am interested in learning about gardening.',
             'status': 'rejected',
-            'file_path': None
         }
     ]
 
@@ -403,10 +370,7 @@ def seed_applications(users, opportunities):
         app = Application(
             user_id=volunteer.id,
             opportunity_id=opportunity.id,
-            message=app_data['message'],
             status=app_data['status'],
-            file_path=app_data['file_path'],
-            applied_at=datetime.utcnow()
         )
         db.session.add(app)
         created_applications.append(app)
@@ -465,11 +429,11 @@ def main():
             # Print summary
             print_summary(users, organizations, opportunities, applications)
 
-            print("\n✅ Seeding successful! You can now use the test accounts to explore the platform.")
+            print("\n Seeding successful! You can now use the test accounts to explore the platform.")
             return 0
 
         except Exception as e:
-            print(f"\n❌ Seeding failed with error: {e}")
+            print(f"\n Seeding failed with error: {e}")
             import traceback
             traceback.print_exc()
             return 1

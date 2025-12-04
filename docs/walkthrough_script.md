@@ -27,7 +27,7 @@
 **Visual Cue**:
 - Show title card with project name and VolunteerHub logo.
 - Lower-third text: "Narrator: [Your Name] | QA: Catalina".
-- Fade to Opportunities listing page.
+- Fade to Opportunities listing ==page.
 
 **Clip Length**: ~8s
 

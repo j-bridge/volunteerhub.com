@@ -8,6 +8,7 @@ import {
   Button,
   Badge,
   useToast,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -16,6 +17,11 @@ export default function OrgDashboard() {
   const navigate = useNavigate();
   const toast = useToast();
   const { user, deleteCreatedOpportunity } = useAuth();
+  const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
+  const panelBg = useColorModeValue("white", "#0b1f24");
+  const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");
+  const textMuted = useColorModeValue("#4a5561", "rgba(231,247,244,0.72)");
+  const borderColor = useColorModeValue("rgba(26,165,154,0.25)", "rgba(26,165,154,0.4)");
 
   const orgEvents = user?.createdOpportunities || [];
 
@@ -43,14 +49,14 @@ export default function OrgDashboard() {
   return (
     <Container maxW="6xl" py={10}>
       <Stack spacing={8}>
-        <Heading size="2xl">Organization Dashboard</Heading>
+        <Heading size="2xl" color={textPrimary}>Organization Dashboard</Heading>
 
         {/* Top actions */}
-        <Box p={6} bg="white" rounded="2xl" shadow="md" borderWidth="1px">
-          <Heading size="md" mb={2}>
+        <Box p={6} bg={cardBg} rounded="2xl" shadow="md" border={`1px solid ${borderColor}`}>
+          <Heading size="md" mb={2} color={textPrimary}>
             Manage Opportunities
           </Heading>
-          <Text color="gray.600" mb={4}>
+          <Text color={textMuted} mb={4}>
             View your current volunteer events and create new ones to post to
             the community.
           </Text>
@@ -64,11 +70,11 @@ export default function OrgDashboard() {
 
         {/* Current events */}
         <Box>
-          <Heading size="lg" mb={4}>
+          <Heading size="lg" mb={4} color={textPrimary}>
             Current Events
           </Heading>
           {orgEvents.length === 0 ? (
-            <Text color="gray.600">
+            <Text color={textMuted}>
               You don&apos;t have any posted events yet. Create your first
               opportunity above.
             </Text>
@@ -78,18 +84,18 @@ export default function OrgDashboard() {
                 <Box
                   key={evt.id}
                   p={4}
-                  bg="white"
+                  bg={panelBg}
                   rounded="xl"
                   shadow="sm"
-                  borderWidth="1px"
+                  border={`1px solid ${borderColor}`}
                 >
-                  <Heading size="sm" mb={1}>
+                  <Heading size="sm" mb={1} color={textPrimary}>
                     {evt.title}
                   </Heading>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color={textMuted}>
                     {evt.location}
                   </Text>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color={textMuted}>
                     {evt.date
                       ? new Date(evt.date).toLocaleDateString()
                       : "Date TBD"}
@@ -130,5 +136,4 @@ export default function OrgDashboard() {
     </Container>
   );
 }
-
 

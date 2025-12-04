@@ -34,7 +34,7 @@ Volunteer:
 Org Admin:
   orgadmin.test@example.com / TestPassword123!
 
-Site Admin:
+Site Admin:wrYes 
   siteadmin.test@example.com / AdminPassword123!
 
 QA (Catalina):

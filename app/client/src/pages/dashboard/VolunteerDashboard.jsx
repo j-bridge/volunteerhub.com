@@ -11,10 +11,18 @@ import {
 import { opportunities } from "../../mock/opportunities";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useColorModeValue } from "@chakra-ui/react";
 
 export default function VolunteerDashboard() {
   const navigate = useNavigate();
   const { user, cancelApplication, removeSavedOpportunity } = useAuth();
+  const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
+  const panelBg = useColorModeValue("white", "#0b1f24");
+  const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");
+  const textMuted = useColorModeValue("#4a5561", "rgba(231,247,244,0.72)");
+  const borderColor = useColorModeValue("rgba(26,165,154,0.25)", "rgba(26,165,154,0.4)");
+  const chipBg = useColorModeValue("gray.50", "rgba(26,165,154,0.12)");
+  const chipBorder = useColorModeValue("rgba(0,0,0,0.06)", "rgba(26,165,154,0.3)");
 
   const applied = user?.appliedOpportunities || [];
   const saved = user?.savedOpportunities || [];
@@ -23,18 +31,20 @@ export default function VolunteerDashboard() {
   return (
     <Container maxW="6xl" py={10}>
       <Stack spacing={8}>
-        <Heading size="2xl">My Dashboard</Heading>
+        <Heading size="2xl" color={textPrimary}>
+          My Dashboard
+        </Heading>
 
         {/* Quick actions / overview */}
         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>
           {/* My Applications */}
-          <Box p={6} bg="white" rounded="2xl" shadow="md">
-            <Heading size="md" mb={2}>
+          <Box p={6} bg={cardBg} rounded="2xl" shadow="md" border={`1px solid ${borderColor}`}>
+            <Heading size="md" mb={2} color={textPrimary}>
               My Applications
             </Heading>
             {applied.length === 0 ? (
               <>
-                <Text color="gray.600">
+                <Text color={textMuted}>
                   You haven&apos;t applied to any opportunities yet.
                 </Text>
                 <Button
@@ -51,15 +61,17 @@ export default function VolunteerDashboard() {
                   <Box
                     key={opp.id}
                     p={3}
-                    bg="gray.50"
+                    bg={chipBg}
                     rounded="md"
-                    borderWidth="1px"
+                    border={`1px solid ${chipBorder}`}
                   >
-                    <Text fontWeight="semibold">{opp.title}</Text>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontWeight="semibold" color={textPrimary}>
+                      {opp.title}
+                    </Text>
+                    <Text fontSize="sm" color={textMuted}>
                       {opp.organization} • {opp.location}
                     </Text>
-                    <Text fontSize="sm" color="gray.500">
+                    <Text fontSize="sm" color={textMuted}>
                       {opp.date
                         ? new Date(opp.date).toLocaleDateString()
                         : "Date TBD"}
@@ -87,12 +99,12 @@ export default function VolunteerDashboard() {
           </Box>
 
           {/* Saved Opportunities */}
-          <Box p={6} bg="white" rounded="2xl" shadow="md">
-            <Heading size="md" mb={2}>
+          <Box p={6} bg={cardBg} rounded="2xl" shadow="md" border={`1px solid ${borderColor}`}>
+            <Heading size="md" mb={2} color={textPrimary}>
               Saved Opportunities
             </Heading>
             {saved.length === 0 ? (
-              <Text color="gray.600">
+              <Text color={textMuted}>
                 Save roles you&apos;re interested in and they&apos;ll show up here.
               </Text>
             ) : (
@@ -101,12 +113,14 @@ export default function VolunteerDashboard() {
                   <Box
                     key={opp.id}
                     p={3}
-                    bg="gray.50"
+                    bg={chipBg}
                     rounded="md"
-                    borderWidth="1px"
+                    border={`1px solid ${chipBorder}`}
                   >
-                    <Text fontWeight="semibold">{opp.title}</Text>
-                    <Text fontSize="sm" color="gray.600">
+                    <Text fontWeight="semibold" color={textPrimary}>
+                      {opp.title}
+                    </Text>
+                    <Text fontSize="sm" color={textMuted}>
                       {opp.organization} • {opp.location}
                     </Text>
                     <Button
@@ -132,11 +146,11 @@ export default function VolunteerDashboard() {
           </Box>
 
           {/* Recommended Opportunities */}
-          <Box p={6} bg="white" rounded="2xl" shadow="md">
-            <Heading size="md" mb={2}>
+          <Box p={6} bg={cardBg} rounded="2xl" shadow="md" border={`1px solid ${borderColor}`}>
+            <Heading size="md" mb={2} color={textPrimary}>
               Recommended Opportunities
             </Heading>
-            <Text color="gray.600">
+            <Text color={textMuted}>
               Once recommendations are set up, personalized suggestions will
               appear here.
             </Text>
@@ -145,11 +159,11 @@ export default function VolunteerDashboard() {
 
         {/* Upcoming opportunities list */}
         <Box mt={4}>
-          <Heading size="lg" mb={4}>
+          <Heading size="lg" mb={4} color={textPrimary}>
             Upcoming Opportunities
           </Heading>
           {upcoming.length === 0 ? (
-            <Text color="gray.600">
+            <Text color={textMuted}>
               No upcoming opportunities yet. Check the opportunities page to
               explore more.
             </Text>
@@ -159,22 +173,22 @@ export default function VolunteerDashboard() {
                 <Box
                   key={opp.id}
                   p={4}
-                  bg="white"
+                  bg={panelBg}
                   rounded="xl"
                   shadow="sm"
-                  borderWidth="1px"
+                  border={`1px solid ${borderColor}`}
                 >
-                  <Heading size="sm" mb={1}>
+                  <Heading size="sm" mb={1} color={textPrimary}>
                     {opp.title}
                   </Heading>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontSize="sm" color={textMuted}>
                     {opp.organization} • {opp.location}
                   </Text>
-                  <Text fontSize="sm" color="gray.500">
+                  <Text fontSize="sm" color={textMuted}>
                     {new Date(opp.date).toLocaleDateString()}
                   </Text>
                   {opp.category && (
-                    <Badge mt={2} variant="subtle">
+                    <Badge mt={2} variant="subtle" colorScheme="teal">
                       {opp.category}
                     </Badge>
                   )}
@@ -187,6 +201,5 @@ export default function VolunteerDashboard() {
     </Container>
   );
 }
-
 
 
