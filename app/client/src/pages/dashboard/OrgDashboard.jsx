@@ -60,12 +60,17 @@ export default function OrgDashboard() {
             View your current volunteer events and create new ones to post to
             the community.
           </Text>
-          <Button
-            colorScheme="teal"
-            onClick={() => navigate("/org/opportunities/new")}
-          >
-            Create New Opportunity
-          </Button>
+          <Stack direction={{ base: "column", sm: "row" }} spacing={3}>
+            <Button
+              colorScheme="teal"
+              onClick={() => navigate("/org/opportunities/new")}
+            >
+              Create New Opportunity
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/org/certificates")}>
+              Issue Certificates
+            </Button>
+          </Stack>
         </Box>
 
         {/* Current events */}
@@ -136,4 +141,3 @@ export default function OrgDashboard() {
     </Container>
   );
 }
-

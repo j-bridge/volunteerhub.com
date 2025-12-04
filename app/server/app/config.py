@@ -35,6 +35,7 @@ class BaseConfig:
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "VolunteerHub <no-reply.volunteerhub@jbridgewater.com>")
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     PROPAGATE_EXCEPTIONS = True
+    CERTIFICATES_DIR = os.getenv("CERTIFICATES_DIR", str(INSTANCE_DIR / "certificates"))
 
 
 class DevelopmentConfig(BaseConfig):

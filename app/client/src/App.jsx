@@ -24,6 +24,10 @@ import EditOpportunity from "./pages/Opportunities/EditOpportunity.jsx"; // ⬅�
 import VolunteerDashboard from "./pages/dashboard/VolunteerDashboard.jsx";
 import OrgDashboard from "./pages/dashboard/OrgDashboard.jsx";
 import AdminDashboard from "./pages/dashboard/AdminDashboard.jsx";
+import OrgCertificates from "./pages/dashboard/OrgCertificates.jsx";
+import AdminCertificates from "./pages/dashboard/AdminCertificates.jsx";
+import AdminUsers from "./pages/dashboard/AdminUsers.jsx";
+import Account from "./pages/Account.jsx";
 
 // Route guards
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
@@ -49,6 +53,7 @@ export default function App() {
         <Route path="videos" element={<VideoGallery />} />
         <Route element={<ProtectedRoute requiredRole={['volunteer', 'organization', 'admin']} />}>
           <Route path="videos/submit" element={<VideoSubmit />} />
+          <Route path="account" element={<Account />} />
         </Route>
 
         {/* Opportunities */}
@@ -65,16 +70,17 @@ export default function App() {
           <Route path="org/dashboard" element={<OrgDashboard />} />
           <Route path="org/opportunities/new" element={<CreateOpportunity />} />
           <Route path="org/opportunities/:id/edit" element={<EditOpportunity />} /> {/* ⬅️ NEW */}
+          <Route path="org/certificates" element={<OrgCertificates />} />
         </Route>
 
         {/* Admin */}
         <Route element={<ProtectedRoute requiredRole="admin" />}>
           <Route path="admin/dashboard" element={<AdminDashboard />} />
+          <Route path="admin/certificates" element={<AdminCertificates />} />
+          <Route path="admin/users" element={<AdminUsers />} />
         </Route>
 
       </Route>
     </Routes>
   );
 }
-
-

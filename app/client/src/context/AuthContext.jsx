@@ -99,6 +99,13 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateUserProfile = (partial) => {
+    setAndStoreUser((prev) => {
+      if (!prev) return prev;
+      return { ...prev, ...partial };
+    });
+  };
+
   // ---------- volunteer: applications ----------
 
   const applyToOpportunity = (oppSummary) => {
@@ -222,6 +229,7 @@ export function AuthProvider({ children }) {
       tokenSource,
       login,
       logout,
+      updateUserProfile,
       applyToOpportunity,
       cancelApplication,
       saveOpportunity,
@@ -237,4 +245,3 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
-

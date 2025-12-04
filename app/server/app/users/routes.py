@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from ..extensions import db
 from ..models import User
-from ..schemas import UserSchema, ChangeRoleSchema
+from ..schemas import UserSchema, ChangeRoleSchema, UserUpdateSchema
 from ..permissions import role_required
 from marshmallow import ValidationError
 
@@ -12,6 +12,7 @@ bp = Blueprint("users", __name__)
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 change_role_schema = ChangeRoleSchema()
+user_update_schema = UserUpdateSchema()
 
 
 @bp.get("/")
@@ -39,14 +40,22 @@ def update_current_user():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    payload = request.get_json(silent=True) or {}
-    name = payload.get("name")
-    if name is not None:
-        user.name = name
+    try:
+        payload = user_update_schema.load(request.get_json(silent=True) or {}, partial=True)
+    except ValidationError as err:
+        return jsonify({"error": "Validation error", "details": err.messages}), 400
 
-    role = payload.get("role")
-    if role and get_jwt().get("role") == "admin":
-        user.role = role
+    if "name" in payload:
+        user.name = payload.get("name")
+
+    if "email" in payload and payload.get("email") != user.email:
+        existing = User.query.filter_by(email=payload["email"]).first()
+        if existing and existing.id != user.id:
+            return jsonify({"error": "Email already in use"}), 409
+        user.email = payload["email"]
+
+    if payload.get("role") and get_jwt().get("role") == "admin":
+        user.role = payload["role"]
 
     db.session.commit()
     return jsonify({"user": user_schema.dump(user)})
@@ -79,4 +88,31 @@ def retrieve_user(user_id: int):
     user = db.session.get(User, user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
+    return jsonify({"user": user_schema.dump(user)})
+
+
+@bp.patch("/<int:user_id>")
+@jwt_required()
+@role_required("admin")
+def admin_update_user(user_id: int):
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    try:
+        payload = user_update_schema.load(request.get_json(silent=True) or {}, partial=True)
+    except ValidationError as err:
+        return jsonify({"error": "Validation error", "details": err.messages}), 400
+
+    if "name" in payload:
+        user.name = payload.get("name")
+    if "email" in payload and payload.get("email") != user.email:
+        existing = User.query.filter_by(email=payload["email"]).first()
+        if existing and existing.id != user.id:
+            return jsonify({"error": "Email already in use"}), 409
+        user.email = payload["email"]
+    if payload.get("role"):
+        user.role = payload["role"]
+
+    db.session.commit()
     return jsonify({"user": user_schema.dump(user)})

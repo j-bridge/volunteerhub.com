@@ -1,5 +1,5 @@
 from .extensions import db
-from datetime import datetime
+from datetime import datetime, date
 
 organization_members = db.Table(
     'organization_members',
@@ -118,3 +118,23 @@ class VideoSubmission(db.Model):
 
     user = db.relationship("User", backref=db.backref("videos", lazy="dynamic"))
     opportunity = db.relationship("Opportunity", backref=db.backref("video_submissions", lazy="dynamic"))
+
+
+class Certificate(db.Model):
+    __tablename__ = "certificates"
+    id = db.Column(db.Integer, primary_key=True)
+    volunteer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False)
+    issued_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey("opportunities.id"), nullable=True)
+    hours = db.Column(db.Float, nullable=False)
+    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(50), default="issued")
+    pdf_path = db.Column(db.String(512), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+
+    volunteer = db.relationship("User", foreign_keys=[volunteer_id])
+    issued_by = db.relationship("User", foreign_keys=[issued_by_id])
+    organization = db.relationship("Organization")
+    opportunity = db.relationship("Opportunity")

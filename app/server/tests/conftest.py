@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,11 @@ def clean_db(app):
     with app.app_context():
         db.drop_all()
         db.create_all()
+        cert_dir_setting = app.config.get("CERTIFICATES_DIR")
+        if cert_dir_setting:
+            cert_dir = Path(cert_dir_setting)
+            if cert_dir.is_dir():
+                shutil.rmtree(cert_dir)
     yield
 
 

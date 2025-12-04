@@ -118,7 +118,14 @@ useEffect(() => {
           duration: 1800,
           isClosable: true,
         });
-        navigate("/");
+        const role = data?.user?.role || "volunteer";
+        const dashboardPath =
+          role === "admin"
+            ? "/admin/dashboard"
+            : role === "organization"
+              ? "/org/dashboard"
+              : "/dashboard";
+        navigate(dashboardPath, { replace: true });
       } else {
         throw new Error(data?.message || "Login failed");
       }

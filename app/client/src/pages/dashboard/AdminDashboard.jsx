@@ -20,6 +20,7 @@ import {
   Tr,
   useToast,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../api/client";
 
 const MetricCard = ({ label, value, helper }) => (
@@ -37,8 +38,10 @@ export default function AdminDashboard() {
   const [pendingVideos, setPendingVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
+  const navigate = useNavigate();
 
   const loadSummary = async () => {
+    setLoading(true);
     try {
       const res = await api.get("/admin/summary");
       setSummary(res.data);
@@ -95,7 +98,20 @@ export default function AdminDashboard() {
     <Box bg="gray.50" minH="100vh" py={{ base: 10, md: 16 }}>
       <Container maxW="7xl">
         <Stack spacing={6}>
-          <Heading size="2xl">Admin Dashboard</Heading>
+          <Stack direction={{ base: "column", sm: "row" }} align={{ sm: "center" }} justify="space-between">
+            <Heading size="2xl">Admin Dashboard</Heading>
+            <Stack direction={{ base: "column", sm: "row" }} spacing={3}>
+              <Button variant="outline" onClick={() => navigate("/admin/certificates")}>
+                Manage Certificates
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/admin/users")}>
+                Manage Users
+              </Button>
+              <Button size="sm" colorScheme="teal" onClick={() => { loadSummary(); loadPendingVideos(); }}>
+                Refresh Data
+              </Button>
+            </Stack>
+          </Stack>
           <Text color="gray.600">
             Platform health, quick approvals, and recent activity at a glance.
           </Text>

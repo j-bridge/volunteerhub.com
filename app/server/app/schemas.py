@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, validate, validates_schema, ValidationError
 from .extensions import ma
-from .models import User, Organization, Opportunity, Application, VideoSubmission
+from .models import User, Organization, Opportunity, Application, VideoSubmission, Certificate
 
 
 # Response schemas
@@ -79,6 +79,12 @@ class LoginSchema(Schema):
 
 class ChangeRoleSchema(Schema):
     role = fields.String(required=True, validate=validate.OneOf(["volunteer", "organization", "admin"]))
+
+
+class UserUpdateSchema(Schema):
+    name = fields.String(required=False, allow_none=True, validate=validate.Length(max=255))
+    email = fields.Email(required=False, allow_none=True)
+    role = fields.String(required=False, allow_none=True, validate=validate.OneOf(["volunteer", "organization", "admin"]))
 
 class PasswordResetRequestSchema(Schema):
     email = fields.Email(required=True)
@@ -162,3 +168,40 @@ class VideoSubmissionCreateSchema(Schema):
 
 class VideoSubmissionStatusSchema(Schema):
     status = fields.String(required=True, validate=validate.OneOf(["submitted", "approved", "rejected"]))
+
+
+class CertificateSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = Certificate
+        load_instance = True
+        include_fk = True
+
+    id = ma.auto_field(dump_only=True)
+    volunteer_id = ma.auto_field()
+    organization_id = ma.auto_field()
+    issued_by_id = ma.auto_field()
+    opportunity_id = ma.auto_field()
+    hours = ma.auto_field()
+    issued_at = ma.auto_field()
+    completed_at = ma.auto_field()
+    status = ma.auto_field()
+    pdf_path = ma.auto_field()
+    notes = ma.auto_field()
+
+
+class CertificateCreateSchema(Schema):
+    volunteer_id = fields.Integer(required=False, allow_none=True)
+    volunteer_email = fields.Email(required=False, allow_none=True)
+    organization_id = fields.Integer(required=True)
+    hours = fields.Float(required=True)
+    completed_at = fields.Date(required=False, allow_none=True)
+    opportunity_id = fields.Integer(required=False, allow_none=True)
+    notes = fields.String(required=False, allow_none=True, validate=validate.Length(max=500))
+
+    @validates_schema
+    def validate_hours(self, data, **kwargs):
+        hours = data.get("hours")
+        if hours is not None and hours <= 0:
+            raise ValidationError("hours must be greater than zero", field_name="hours")
+        if not data.get("volunteer_id") and not data.get("volunteer_email"):
+            raise ValidationError("volunteer_id or volunteer_email is required", field_name="volunteer_id")

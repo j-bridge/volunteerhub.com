@@ -134,10 +134,25 @@ export default function NavBar() {
               My Dashboard
             </Link>
           )}
-          {user?.role === "admin" && (
-            <Link as={RouterLink} to="/admin/dashboard" fontWeight="600" color="teal.600">
-              Admin
+          {user && (
+            <Link as={RouterLink} to="/account" fontWeight="500">
+              Account
             </Link>
+          )}
+          {user?.role === "organization" && (
+            <Link as={RouterLink} to="/org/certificates" fontWeight="500">
+              Certificates
+            </Link>
+          )}
+          {user?.role === "admin" && (
+            <>
+              <Link as={RouterLink} to="/admin/dashboard" fontWeight="600" color="teal.600">
+                Admin
+              </Link>
+              <Link as={RouterLink} to="/admin/certificates" fontWeight="500">
+                Certs
+              </Link>
+            </>
           )}
         </HStack>
 
@@ -258,6 +273,21 @@ export default function NavBar() {
                 >
                   My Dashboard
                 </Link>
+                <Link as={RouterLink} to="/account" onClick={() => setMobileOpen(false)}>
+                  Account
+                </Link>
+                {user.role === "organization" && (
+                  <Link as={RouterLink} to="/org/certificates" onClick={() => setMobileOpen(false)}>
+                    Certificates
+                  </Link>
+                )}
+                {user.role === "admin" && (
+                  <>
+                    <Link as={RouterLink} to="/admin/certificates" onClick={() => setMobileOpen(false)}>
+                      Certificates
+                    </Link>
+                  </>
+                )}
                 <Button size="sm" variant="outline" onClick={() => { setMobileOpen(false); handleLogout(); }}>
                   Log out
                 </Button>

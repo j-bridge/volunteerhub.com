@@ -1,0 +1,10 @@
+{% extends "email/base_vhub_email.html" %}
+{% block content %}
+  <p style="margin:0 0 18px 0;">Hi {{ user_name }},</p>
+  <p style="margin:0 0 14px 0;">Thank you for contributing your time with {{ organization_name }}.</p>
+  <p style="margin:0 0 14px 0;">Your completion certificate is ready. It documents {{ hours }} volunteer hours.</p>
+  <p style="margin:0 0 24px 0;">
+    <a href="{{ download_url }}" style="background-color:#38bdf8;color:#0f172a;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700;">Download Certificate</a>
+  </p>
+  <p style="margin:0;color:#cbd5e1;font-size:14px;">If you did not expect this email, you can ignore it.</p>
+{% endblock %}

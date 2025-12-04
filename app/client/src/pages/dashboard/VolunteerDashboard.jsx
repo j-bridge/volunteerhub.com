@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Container,
   Heading,
@@ -7,15 +8,19 @@ import {
   Text,
   Button,
   Badge,
+  useToast,
+  Link,
 } from "@chakra-ui/react";
 import { opportunities } from "../../mock/opportunities";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useColorModeValue } from "@chakra-ui/react";
+import { api } from "../../api/client";
 
 export default function VolunteerDashboard() {
   const navigate = useNavigate();
   const { user, cancelApplication, removeSavedOpportunity } = useAuth();
+  const toast = useToast();
   const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
   const panelBg = useColorModeValue("white", "#0b1f24");
   const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");
@@ -27,6 +32,43 @@ export default function VolunteerDashboard() {
   const applied = user?.appliedOpportunities || [];
   const saved = user?.savedOpportunities || [];
   const upcoming = opportunities.slice(0, 3); // simple subset for now
+  const [certificates, setCertificates] = useState([]);
+
+  const loadCertificates = async () => {
+    try {
+      const res = await api.get("/certificates");
+      setCertificates(res.data?.certificates || []);
+    } catch (err) {
+      toast({
+        title: "Could not load certificates",
+        status: "error",
+        duration: 2500,
+        isClosable: true,
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadCertificates();
+  }, []);
+
+  const downloadPdf = async (cert) => {
+    if (!cert?.id) return;
+    try {
+      const res = await api.get(cert.download_path || `/certificates/${cert.id}/pdf`, {
+        responseType: "blob",
+      });
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `certificate-${cert.id}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast({ title: "Could not download certificate", status: "error", duration: 2500, isClosable: true });
+    }
+  };
 
   return (
     <Container maxW="6xl" py={10}>
@@ -157,6 +199,48 @@ export default function VolunteerDashboard() {
           </Box>
         </SimpleGrid>
 
+        {/* Certificates */}
+        <Box p={6} bg={cardBg} rounded="2xl" shadow="md" border={`1px solid ${borderColor}`}>
+          <Heading size="lg" mb={3} color={textPrimary}>
+            My Certificates
+          </Heading>
+          {certificates.length === 0 ? (
+            <Text color={textMuted}>Certificates you earn will appear here with download links.</Text>
+          ) : (
+            <Stack spacing={3}>
+              {certificates.map((cert) => (
+                <Box
+                  key={cert.id}
+                  p={3}
+                  bg={chipBg}
+                  rounded="md"
+                  border={`1px solid ${chipBorder}`}
+                >
+                  <Stack direction={{ base: "column", sm: "row" }} justify="space-between" align={{ sm: "center" }}>
+                    <Stack spacing={1}>
+                      <Text fontWeight="semibold" color={textPrimary}>
+                        {cert.organization_id ? `Org #${cert.organization_id}` : "Organization"}
+                      </Text>
+                      <Text fontSize="sm" color={textMuted}>
+                        {cert.hours} hours • Issued {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : ""}
+                      </Text>
+                    </Stack>
+                    {cert.download_url ? (
+                      <Button size="xs" variant="outline" onClick={() => downloadPdf(cert)}>
+                        Download
+                      </Button>
+                    ) : (
+                      <Text fontSize="sm" color={textMuted}>
+                        Generating PDF…
+                      </Text>
+                    )}
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
         {/* Upcoming opportunities list */}
         <Box mt={4}>
           <Heading size="lg" mb={4} color={textPrimary}>
@@ -201,5 +285,3 @@ export default function VolunteerDashboard() {
     </Container>
   );
 }
-
-
