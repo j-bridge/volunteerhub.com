@@ -10,7 +10,6 @@ import {
   Tag,
   Button,
   Badge,
-  useColorModeValue,
 } from "@chakra-ui/react";
 
 const OpportunityCard = ({
@@ -20,25 +19,32 @@ const OpportunityCard = ({
   location,
   category,
   description,
+  tags = [],
+  timeCommitment,
+  mode,
+  spotsRemaining,
   onView,
   onApply,
+  onSelect,
   applied = false,
+  applying = false,
+  selected = false,
 }) => {
-  const cardBg = useColorModeValue("white", "gray.800");
-
   return (
     <Box
-      bg={cardBg}
-      borderRadius="2xl"
+      className="opportunity-card"
       p={6}
-      boxShadow="sm"
-      borderWidth="1px"
-      borderColor={useColorModeValue("gray.200", "gray.700")}
+      data-title={title}
+      data-description={description}
+      borderRadius="12px"
+      border={selected ? "2px solid var(--vh-primary)" : "none"}
+      cursor="pointer"
+      onClick={onSelect}
     >
       <Stack spacing={3}>
         <HStack justify="space-between" align="flex-start">
           <Box>
-            <Heading size="md" mb={1}>
+            <Heading size="md" mb={1} color="var(--vh-heading)">
               {title}
             </Heading>
             <Text fontSize="sm" color="gray.600">
@@ -46,32 +52,60 @@ const OpportunityCard = ({
             </Text>
           </Box>
           {category && (
-            <Tag size="sm" variant="subtle">
+            <Tag size="sm" variant="solid" bg="var(--vh-primary)" color="white">
               {category}
             </Tag>
           )}
         </HStack>
 
-        <HStack spacing={4} fontSize="sm" color="gray.600">
-          <Badge variant="subtle">{location}</Badge>
-          <Text>{date}</Text>
+        <HStack spacing={4} fontSize="sm" color="gray.600" flexWrap="wrap">
+          <Badge variant="subtle" colorScheme="blue">
+            {location}
+          </Badge>
+          <Text color="#2c3e50" fontWeight="600">
+            {date}
+          </Text>
         </HStack>
 
         <Text fontSize="sm" color="gray.700" noOfLines={3}>
           {description}
         </Text>
 
-        <HStack spacing={3} pt={2}>
-          <Button size="sm" onClick={onView}>
+        {tags.length > 0 && (
+          <HStack className="opportunity-tags" spacing={2}>
+            {tags.map((tag) => (
+              <span key={tag} className="opportunity-tag">
+                {tag}
+              </span>
+            ))}
+          </HStack>
+        )}
+
+        <HStack spacing={3} fontSize="sm" color="gray.700" flexWrap="wrap">
+          {mode && <Badge colorScheme="green">{mode}</Badge>}
+          {timeCommitment && <Badge colorScheme="purple">{timeCommitment}</Badge>}
+          {typeof spotsRemaining === "number" && (
+            <Badge colorScheme={spotsRemaining > 5 ? "blue" : "red"}>
+              Spots left: {spotsRemaining}
+            </Badge>
+          )}
+        </HStack>
+
+        <HStack spacing={3} pt={2} flexWrap="wrap">
+          <Button size="sm" onClick={onView} variant="outline" colorScheme="blue">
             View
           </Button>
           <Button
+            className="apply-button"
             size="sm"
-            variant="outline"
+            colorScheme="blue"
             onClick={onApply}
             isDisabled={applied}
+            bg={applied || applying ? "var(--vh-green)" : "var(--vh-primary)"}
+            _hover={{ bg: applied || applying ? "var(--vh-green)" : "#2f89c5" }}
+            color="white"
           >
-            {applied ? "Applied" : "Apply"}
+            {applied ? "Applied" : applying ? "Applied! ✓" : "Apply"}
           </Button>
         </HStack>
       </Stack>
@@ -80,4 +114,3 @@ const OpportunityCard = ({
 };
 
 export default OpportunityCard;
-

@@ -1,0 +1,29 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+<h3>New Order Received</h3>
+<p><strong>Customer:</strong> {{ user_name }}</p>
+<p><strong>Email:</strong> {{ user_email }}</p>
+<p><strong>Order ID:</strong> #{{ order_id }}</p>
+<p><strong>Shipping Address:</strong><br>{{ address }}</p>
+
+<table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; text-align: left;">
+    <tr style="background-color: {{ ACCENT_COLOR }}; color: white;">
+        <th>Product</th>
+        <th>Quantity</th>
+        <th>Price</th>
+    </tr>
+    {% for item in items %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>${{ item.price }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<p><strong>Subtotal:</strong> ${{ subtotal }}<br>
+    <strong>Shipping:</strong> ${{ shipping_cost }}<br>
+    <strong>Total:</strong> ${{ total }}
+</p>
+{% endblock %}

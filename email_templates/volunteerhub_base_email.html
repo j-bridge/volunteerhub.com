@@ -1,0 +1,16 @@
+{% set EMAIL_BG_COLOR = "#0f172a" %}
+{% set TEXT_COLOR = "#e2e8f0" %}
+{% set SUBTEXT_COLOR = "#cbd5e1" %}
+{% set ACCENT_COLOR = "#38bdf8" %}
+{% set LINK_COLOR = "#38bdf8" %}
+{% set BRAND_NAME = "VolunteerHub" %}
+{% set SITE_URL = "https://volunteerhub.apps.jbridgewater.com" %}
+
+{% extends "base_email.html" %}
+
+{% block content %}
+<h2 style="margin:0 0 12px 0;color:#f8fafc;">{{ subject or "VolunteerHub Notification" }}</h2>
+<p style="margin:0 0 18px 0;">
+  Hi {{ user_name or "there" }},
+</p>
+{% endblock %}

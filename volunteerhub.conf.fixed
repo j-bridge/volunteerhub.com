@@ -1,0 +1,11 @@
+[program:volunteerhub]
+command=/home/jcbridge0/web/volunteerhub.com/app/server/venv/bin/gunicorn wsgi:app --chdir /home/jcbridge0/web/volunteerhub.com/app/server --bind 127.0.0.1:5001
+directory=/home/jcbridge0/web/volunteerhub.com/app/server
+autostart=true
+autorestart=true
+user=www-data
+stopasgroup=true
+killasgroup=true
+stdout_logfile=/var/log/volunteerhub.out.log
+stderr_logfile=/var/log/volunteerhub.err.log
+environment=

@@ -1,42 +1,131 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  --vh-primary: #3498db;
+  --vh-green: #8bc34a;
+  --vh-orange: #f39c12;
+  --vh-bg: #f3f0ea;
+  --vh-heading: #2c3e50;
+  --vh-text: #334155;
+  --vh-ink: #0d2329;           /* deep teal base */
+  --vh-ink-soft: #123039;      /* raised surface */
+  --vh-ink-accent: #18b2a5;    /* matches login/signup vibe without typical blue */
+  --vh-ink-text: #e7f7f4;      /* light text on teal */
+  --vh-ink-muted: #b8e1da;     /* muted/supporting text on teal */
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: var(--vh-text);
+  background-color: var(--vh-bg);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root.chakra-ui-dark,
+.chakra-ui-dark {
+  --vh-primary: #58a6ff;
+  --vh-green: #9ccc65;
+  --vh-orange: #f6ad55;
+  --vh-bg: #0f172a;
+  --vh-heading: #e2e8f0;
+  --vh-text: #cbd5e1;
+  --vh-ink: #0d2329;
+  --vh-ink-soft: #123039;
+  --vh-ink-accent: #18b2a5;
+  --vh-ink-text: #e7f7f4;
+  --vh-ink-muted: #b8e1da;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--vh-bg);
+  }
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100%;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+a {
+  color: inherit;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.vh-page-bg {
+  background: var(--vh-bg);
+}
+
+.vh-social-proof {
+  background: linear-gradient(90deg, rgba(52, 152, 219, 0.12), rgba(139, 195, 74, 0.1));
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: var(--vh-heading);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+}
+.chakra-ui-dark .vh-social-proof {
+  background: linear-gradient(90deg, rgba(88, 166, 255, 0.12), rgba(156, 204, 101, 0.08));
+  border-color: rgba(88, 166, 255, 0.18);
+}
+
+.opportunity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.opportunity-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.chakra-ui-dark .opportunity-card {
+  background: #0b1220;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.opportunity-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--vh-primary), var(--vh-green));
+}
+
+.opportunity-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+}
+
+.opportunity-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.opportunity-tag {
+  background: rgba(52, 152, 219, 0.08);
+  color: var(--vh-heading);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.apply-button {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .apply-button {
+    width: auto;
   }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }

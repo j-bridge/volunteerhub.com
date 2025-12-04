@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../jbridgewater"
+		},
+		{
+			"path": "../../Public/scripts/deployment-framework"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}

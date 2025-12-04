@@ -16,6 +16,7 @@ import {
   Checkbox,
   InputGroup,
   InputRightElement,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
@@ -33,6 +34,21 @@ export default function Login() {
   const navigate = useNavigate();
   const { login: authLogin } = useAuth();
   const location = useLocation();
+  const pageBg = useColorModeValue(
+    "linear-gradient(135deg, #f5f1e8, #ede8de)",
+    "radial-gradient(120% 120% at 10% 20%, rgba(24,178,165,0.18), transparent 45%), linear-gradient(145deg, #0b1f24, #08141a)"
+  );
+  const cardBg = useColorModeValue("#ffffff", "var(--vh-ink-soft)");
+  const inputBg = useColorModeValue("#ffffff", "#0b1f24");
+  const inkAccent = useColorModeValue("#1aa59a", "#0f6c5f");
+  const inkText = useColorModeValue("#1f262a", "var(--vh-ink-text)");
+  const inkMuted = useColorModeValue("#4a5561", "var(--vh-ink-muted)");
+  const borderColor = useColorModeValue("rgba(26,165,154,0.25)", "rgba(15,108,95,0.45)");
+  const placeholderColor = useColorModeValue("#5b6571", "rgba(231,247,244,0.7)");
+  const focusShadow = useColorModeValue("rgba(26,165,154,0.6)", "rgba(15,108,95,0.6)");
+  const buttonText = useColorModeValue("#0f252b", "#0b1618");
+  const buttonHover = useColorModeValue("#1fb9ae", "#0f7c70");
+
 
 useEffect(() => {
   if (location.state?.fromApply) {
@@ -53,12 +69,16 @@ useEffect(() => {
 
   const emailValid = /^\S+@\S+\.\S+$/.test(email) || email.length === 0;
 
-  const extractToken = (data) =>
-    data?.access_token ||
-    data?.token ||
-    data?.data?.access_token ||
-    data?.data?.token ||
-    null;
+  const extractToken = (data) => {
+    if (!data) return null;
+    if (data.access_token) return data.access_token;
+    if (data.token) return data.token;
+    if (data.tokens?.access_token) return data.tokens.access_token;
+    if (data.data?.access_token) return data.data.access_token;
+    if (data.data?.token) return data.data.token;
+    if (data.data?.tokens?.access_token) return data.data.tokens.access_token;
+    return null;
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -103,8 +123,10 @@ useEffect(() => {
         throw new Error(data?.message || "Login failed");
       }
     } catch (err) {
+      const resp = err?.response?.data || {};
       const msg =
-        err?.response?.data?.message ||
+        resp.message ||
+        resp.error ||
         err?.message ||
         "Unable to reach the server.";
       toast({
@@ -120,39 +142,49 @@ useEffect(() => {
   };
 
   return (
-    <Box py={16} bg="gray.50" minH="calc(100vh - 160px)">
+    <Box py={16} bg={pageBg} minH="calc(100vh - 160px)" color={inkText}>
       <Container maxW="container.sm">
-        <Heading textAlign="center" mb={2}>
+        <Heading textAlign="center" mb={2} color={inkText}>
           Log In
         </Heading>
-        <Text textAlign="center" color="gray.600" mb={8}>
+        <Text textAlign="center" color={inkMuted} mb={8}>
           Access your VolunteerHub account.
         </Text>
 
         <Box
           as="form"
           onSubmit={handleLogin}
-          bg="white"
+          bg={cardBg}
+          color={inkText}
           borderWidth="1px"
+          borderColor={borderColor}
           borderRadius="lg"
           p={6}
-          boxShadow="sm"
+          boxShadow="0 24px 60px rgba(0,0,0,0.35)"
         >
           <VStack spacing={4} align="stretch">
             <FormControl isRequired isInvalid={!emailValid && email.length > 0}>
-              <FormLabel>Email</FormLabel>
+              <FormLabel color={inkText}>Email</FormLabel>
               <Input
                 type="email"
                 placeholder="you@example.org"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
+                bg={inputBg}
+                color={inkText}
+                borderColor={borderColor}
+                _placeholder={{ color: placeholderColor }}
+                _focus={{
+                  borderColor: inkAccent,
+                  boxShadow: `0 0 0 1px ${focusShadow}`,
+                }}
               />
               <FormErrorMessage>Enter a valid email address.</FormErrorMessage>
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel>Password</FormLabel>
+              <FormLabel color={inkText}>Password</FormLabel>
               <InputGroup>
                 <Input
                   type={showPw ? "text" : "password"}
@@ -160,12 +192,21 @@ useEffect(() => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
+                  bg={inputBg}
+                  color={inkText}
+                  borderColor={borderColor}
+                  _placeholder={{ color: placeholderColor }}
+                  _focus={{
+                    borderColor: inkAccent,
+                    boxShadow: `0 0 0 1px ${focusShadow}`,
+                  }}
                 />
                 <InputRightElement width="4.5rem">
                   <Button
                     h="1.75rem"
                     size="sm"
                     variant="ghost"
+                    color={inkText}
                     onClick={() => setShowPw((s) => !s)}
                   >
                     {showPw ? "Hide" : "Show"}
@@ -178,17 +219,21 @@ useEffect(() => {
               <Checkbox
                 isChecked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
+                colorScheme="teal"
+                color={inkText}
               >
                 Remember me
               </Checkbox>
-              <Link as={RouterLink} to="/reset" color="teal.500" fontSize="sm">
+              <Link as={RouterLink} to="/reset" color={inkAccent} fontSize="sm" fontWeight="semibold">
                 Forgot password?
               </Link>
             </HStack>
 
             <Button
               type="submit"
-              colorScheme="teal"
+              bg={inkAccent}
+              color={buttonText}
+              _hover={{ bg: buttonHover }}
               w="100%"
               isLoading={submitting}
               loadingText="Signing in..."
@@ -198,9 +243,9 @@ useEffect(() => {
           </VStack>
         </Box>
 
-        <Text mt={4} textAlign="center">
+        <Text mt={4} textAlign="center" color={inkMuted}>
           Don’t have an account?{" "}
-          <Link as={RouterLink} to="/signup" color="teal.500" fontWeight="semibold">
+          <Link as={RouterLink} to="/signup" color={inkAccent} fontWeight="semibold">
             Sign up
           </Link>
         </Text>

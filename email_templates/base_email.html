@@ -1,0 +1,55 @@
+<html style="margin: 0; padding: 0;">
+
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+    <div style="
+        background-color: {{ EMAIL_BG_COLOR }};
+        max-width: 600px;
+        margin: auto;
+        color: {{ TEXT_COLOR }};
+        padding: 40px 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    ">
+        <!-- Main Content -->
+        <div style="text-align: left; font-size: 16px; line-height: 1.6;">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Divider -->
+        <hr style="border: none; border-top: 1px solid {{ ACCENT_COLOR }}; margin: 40px 0;">
+
+        <!-- Footer Section -->
+        <div style="text-align: center;">
+            <!-- CTA -->
+            <p style="margin-bottom: 20px;">
+                <a href="{{ BRAND_NAME }}" style="color: {{ LINK_COLOR }}; text-decoration: none; font-weight: bold;">
+                    Visit our website<br>
+                    <span style="text-decoration: underline;">{{ SITE_URL }}</span>
+                </a>
+            </p>
+
+            <!-- Brand Logo -->
+            <a href="{{ SITE_URL }}">
+                <img src="{{ SITE_URL }}/static/images/logo.png" alt="{{ BRAND_NAME }} Logo" width="120"
+                    style="margin-bottom: 20px;" />
+            </a>
+
+            <!-- Attribution -->
+            <p style="margin: 20px 0;">
+                <a href="https://jbridgewater.com" style="text-decoration: none; color: {{ SUBTEXT_COLOR }};">
+                    Powered by<br>
+                    <img src="https://jbridgewater.com/assets/BRIDGEWATER_LOGO-BrToMz0-.png"
+                        alt="Powered by JBRIDGEWATER" width="160" style="margin-top: 8px;" />
+                </a>
+            </p>
+
+            <!-- Email Info -->
+            <p style="font-size: 0.8em; color: {{ SUBTEXT_COLOR }}; margin-top: 20px;">
+                This email was sent to <span style="text-decoration: underline;">{{ user_email }}</span> via
+                <a href="{{ SITE_URL }}" style="color: {{ SUBTEXT_COLOR }};">{{ SITE_URL }}</a>.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

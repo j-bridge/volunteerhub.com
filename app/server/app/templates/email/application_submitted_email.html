@@ -1,0 +1,11 @@
+{% extends "email/base_vhub_email.html" %}
+
+{% block content %}
+<p style="margin:0 0 12px 0;">Hi {{ user_name or "there" }},</p>
+<p style="margin:0 0 12px 0;">
+  We received your application for <strong>{{ opportunity_title }}</strong>.
+  You can review details at
+  <a href="{{ opportunity_url }}" style="color:#38bdf8;">{{ opportunity_url }}</a>.
+</p>
+<p style="margin:0 0 12px 0;">Thank you for volunteering!</p>
+{% endblock %}

@@ -10,6 +10,7 @@ import {
   Skeleton,
   Stack,
   Text,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import { api } from "../api/client";
@@ -30,7 +31,7 @@ const toEmbedUrl = (url) => {
       const id = parsed.pathname.split("/").filter(Boolean).pop();
       return id ? `https://player.vimeo.com/video/${id}` : null;
     }
-  } catch (err) {
+  } catch {
     return null;
   }
   return null;
@@ -38,8 +39,12 @@ const toEmbedUrl = (url) => {
 
 const VideoCard = ({ video }) => {
   const embed = useMemo(() => toEmbedUrl(video.video_url), [video.video_url]);
+  const cardBg = useColorModeValue("#f8f6f2", "gray.800");
+  const textColor = useColorModeValue("gray.600", "gray.300");
+  const subText = useColorModeValue("gray.500", "gray.400");
+  const cardBorderColor = useColorModeValue("gray.200", "gray.700");
   return (
-    <Box borderWidth="1px" borderRadius="lg" p={4} bg="white" shadow="sm">
+    <Box borderWidth="1px" borderRadius="lg" p={4} bg={cardBg} shadow="sm" borderColor={cardBorderColor}>
       <Stack spacing={2}>
         <Stack direction="row" align="center" justify="space-between">
           <Heading size="md">{video.title}</Heading>
@@ -47,7 +52,7 @@ const VideoCard = ({ video }) => {
             {video.status}
           </Badge>
         </Stack>
-        <Text color="gray.600" noOfLines={2}>
+        <Text color={textColor} noOfLines={2}>
           {video.description || "No description provided."}
         </Text>
         {embed ? (
@@ -73,7 +78,7 @@ const VideoCard = ({ video }) => {
             Open video
           </Button>
         )}
-        <Text fontSize="sm" color="gray.500">
+        <Text fontSize="sm" color={subText}>
           Submitted {new Date(video.created_at).toLocaleString()}
         </Text>
       </Stack>
@@ -85,6 +90,12 @@ export default function VideoGallery() {
   const { user } = useAuth();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const pageBg = useColorModeValue("#f2f0eb", "#08141a");
+  const textColor = useColorModeValue("#1f262a", "gray.300");
+  const cardBg = useColorModeValue("#f8f6f2", "var(--vh-ink-soft)");
+  const cardBorder = useColorModeValue("rgba(26,165,154,0.25)", "rgba(15,108,95,0.45)");
+  const emptyHeading = useColorModeValue("#1f262a", "var(--vh-ink-text)");
+  const emptyMuted = useColorModeValue("#4a5561", "var(--vh-ink-muted)");
 
   const fetchVideos = async () => {
     setLoading(true);
@@ -103,11 +114,11 @@ export default function VideoGallery() {
   }, []);
 
   return (
-    <Box bg="gray.50" minH="100vh" py={{ base: 10, md: 16 }}>
+    <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }}>
       <Container maxW="6xl">
         <Stack spacing={4} mb={6}>
           <Heading size="2xl">Video Submissions</Heading>
-          <Text fontSize="lg" color="gray.600">
+          <Text fontSize="lg" color={textColor}>
             Watch approved volunteer stories and organization highlights. Submit your own to be featured.
           </Text>
           <Stack direction={{ base: "column", md: "row" }} spacing={3}>
@@ -131,11 +142,19 @@ export default function VideoGallery() {
             ))}
           </SimpleGrid>
         ) : videos.length === 0 ? (
-          <Box bg="white" borderRadius="lg" borderWidth="1px" p={6} shadow="sm">
-            <Heading size="md" mb={2}>
+          <Box
+            bg={cardBg}
+            color={emptyHeading}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor={cardBorder}
+            p={6}
+            boxShadow="0 24px 60px rgba(0,0,0,0.35)"
+          >
+            <Heading size="md" mb={2} color={emptyHeading}>
               No videos yet
             </Heading>
-            <Text color="gray.600">
+            <Text color={emptyMuted}>
               Be the first to share your experience. Submit a video and we&apos;ll review it shortly.
             </Text>
           </Box>

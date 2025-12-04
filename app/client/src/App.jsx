@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import RootLayout from "./layouts/RootLayout";
+import "./App.css";
 
 // Core pages
 import Home from "./pages/Home";
@@ -11,6 +12,7 @@ import VideoSubmit from "./pages/VideoSubmit.jsx";
 // Static pages
 import Contact from "./pages/static/contact.jsx";
 import About from "./pages/static/about.jsx";
+import Legal from "./pages/static/legal.jsx";
 
 // Opportunities
 import Opportunities from "./pages/Opportunities/Opportunities.jsx";
@@ -41,6 +43,7 @@ export default function App() {
         {/* Static pages */}
         <Route path="about" element={<About />} />
         <Route path="contact" element={<Contact />} />
+        <Route path="legal" element={<Legal />} />
 
         {/* Videos */}
         <Route path="videos" element={<VideoGallery />} />
@@ -73,7 +76,5 @@ export default function App() {
     </Routes>
   );
 }
-
-
 
 

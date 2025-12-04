@@ -19,7 +19,11 @@ import {
 const Contact = () => {
   const toast = useToast();
   const cardBg = useColorModeValue("white", "gray.800");
-  const sectionBg = useColorModeValue("gray.50", "gray.900");
+  const sectionBg = useColorModeValue("gray.50", "#0f1a21");
+  const heroColor = useColorModeValue("#1aa59a", "#1aa59a"); // logo/chat accent
+  const headingText = useColorModeValue("gray.800", "#e7f7f4");
+  const bodyText = useColorModeValue("gray.600", "#dbe8f0"); // brighter in dark mode
+  const emailColor = useColorModeValue("#0f7c70", "#7dd3fc"); // surprise color for emails
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -37,8 +41,8 @@ const Contact = () => {
       
       {/* Header */}
       <Stack spacing={4} mb={10}>
-        <Heading size="2xl">Contact Us</Heading>
-        <Text fontSize="lg" color="gray.600">
+        <Heading size="2xl" color={heroColor}>Contact Us</Heading>
+        <Text fontSize="lg" color={bodyText}>
           Have questions, want to partner with us, or need support? Send us a message.
         </Text>
       </Stack>
@@ -48,24 +52,24 @@ const Contact = () => {
         {/* Left: Info */}
         <Stack spacing={6}>
           <Box bg={sectionBg} p={6} borderRadius="2xl">
-            <Heading size="sm" mb={2}>General Questions</Heading>
-            <Text fontSize="sm" color="gray.600" mb={2}>
+            <Heading size="sm" mb={2} color={heroColor}>General Questions</Heading>
+            <Text fontSize="sm" color={bodyText} mb={2}>
               For volunteer help or platform questions:
             </Text>
-            <Text fontWeight="medium">support@volunteerhub.com</Text>
+            <Text fontWeight="semibold" color={emailColor}>volunteersupport@jbridgewater.com</Text>
           </Box>
 
           <Box bg={sectionBg} p={6} borderRadius="2xl">
-            <Heading size="sm" mb={2}>Organizations</Heading>
-            <Text fontSize="sm" color="gray.600" mb={2}>
+            <Heading size="sm" mb={2} color={heroColor}>Organizations</Heading>
+            <Text fontSize="sm" color={bodyText} mb={2}>
               Want to post opportunities or collaborate?
             </Text>
-            <Text fontWeight="medium">partners@volunteerhub.com</Text>
+            <Text fontWeight="semibold" color={emailColor}>volunteerpartners@jbridgewater.com</Text>
           </Box>
 
           <Box bg={sectionBg} p={6} borderRadius="2xl">
-            <Heading size="sm" mb={2}>Feedback</Heading>
-            <Text fontSize="sm" color="gray.600">
+            <Heading size="sm" mb={2} color={heroColor}>Feedback</Heading>
+            <Text fontSize="sm" color={bodyText}>
               Found a bug or suggestion? Tell us!
             </Text>
           </Box>
@@ -82,23 +86,37 @@ const Contact = () => {
         >
           <Stack spacing={4}>
             <FormControl isRequired>
-              <FormLabel>Name</FormLabel>
-              <Input placeholder="Your name" />
+              <FormLabel color={headingText}>Name</FormLabel>
+              <Input placeholder="Your name" name="name" autoComplete="name" />
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel>Email</FormLabel>
-              <Input type="email" placeholder="you@example.com" />
+              <FormLabel color={headingText}>Email</FormLabel>
+              <Input
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
             </FormControl>
 
             <FormControl>
-              <FormLabel>Organization (optional)</FormLabel>
-              <Input placeholder="Nonprofit, school, club, etc." />
+              <FormLabel color={headingText}>Organization (optional)</FormLabel>
+              <Input
+                name="organization"
+                placeholder="Nonprofit, school, club, etc."
+                autoComplete="organization"
+              />
             </FormControl>
 
             <FormControl isRequired>
-              <FormLabel>Message</FormLabel>
-              <Textarea rows={5} placeholder="How can we help?" />
+              <FormLabel color={headingText}>Message</FormLabel>
+              <Textarea
+                name="message"
+                rows={5}
+                placeholder="How can we help?"
+                autoComplete="off"
+              />
             </FormControl>
 
             <Button type="submit" mt={2}>

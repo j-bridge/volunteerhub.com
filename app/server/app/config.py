@@ -32,7 +32,7 @@ class BaseConfig:
     SMTP_USERNAME = os.getenv("SMTP_USERNAME")
     SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
     SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() in ("1", "true", "yes", "on")
-    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "VolunteerHub <no-reply@localhost>")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "VolunteerHub <no-reply.volunteerhub@jbridgewater.com>")
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     PROPAGATE_EXCEPTIONS = True
 

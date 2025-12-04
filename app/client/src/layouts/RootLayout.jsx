@@ -1,17 +1,48 @@
-import { Box, Flex } from "@chakra-ui/react";
-import { Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { Box, Flex, useColorModeValue } from "@chakra-ui/react";
+import { Outlet, useLocation } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
+import ChatWidget from "../components/ChatWidget";
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [pathname]);
+
+  return null;
+};
 
 export default function RootLayout() {
+  const pageBg = useColorModeValue("#f2f0eb", "#08141a");
+
   return (
     <Flex direction="column" minH="100vh" w="100%">
       <NavBar />
-      <Box as="main" flex="1" w="100%" alignSelf="stretch">
+      <ScrollToTop />
+      <Box
+        as="main"
+        flex="1"
+        w="100%"
+        alignSelf="stretch"
+        bg={pageBg}
+        position="relative"
+        _before={{
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          bg: pageBg,
+          zIndex: 0,
+        }}
+      >
+        <Box position="relative" zIndex={1}>
         <Outlet />
+        </Box>
       </Box>
+      <ChatWidget />
       <Footer />
     </Flex>
   );
 }
-

@@ -80,6 +80,13 @@ class LoginSchema(Schema):
 class ChangeRoleSchema(Schema):
     role = fields.String(required=True, validate=validate.OneOf(["volunteer", "organization", "admin"]))
 
+class PasswordResetRequestSchema(Schema):
+    email = fields.Email(required=True)
+
+class PasswordResetSchema(Schema):
+    token = fields.String(required=True)
+    password = fields.String(required=True)
+
 
 class OrganizationCreateSchema(Schema):
     name = fields.String(required=True, validate=validate.Length(min=2, max=255))

@@ -10,6 +10,10 @@ import {
   Button,
   useColorModeValue,
   useToast,
+  Divider,
+  SimpleGrid,
+  VStack,
+  Image,
 } from "@chakra-ui/react";
 import { useParams, useNavigate } from "react-router-dom";
 import { opportunities } from "../../mock/opportunities";
@@ -26,6 +30,15 @@ export default function OpportunityDetails() {
   const cardBg = useColorModeValue("white", "gray.800");
 
   const opportunity = opportunities.find((o) => String(o.id) === String(id));
+  const related = opportunities
+    .filter(
+      (o) =>
+        String(o.id) !== String(id) &&
+        (o.location === opportunity?.location ||
+          o.category === opportunity?.category ||
+          (o.tags || []).some((t) => (opportunity?.tags || []).includes(t)))
+    )
+    .slice(0, 3);
 
   if (!opportunity) {
     return (
@@ -155,69 +168,173 @@ export default function OpportunityDetails() {
 
   return (
     <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }}>
-      <Container maxW="4xl">
-        <Button
-          mb={6}
-          variant="ghost"
-          onClick={() => navigate("/opportunities")}
-        >
+      <Container maxW="6xl">
+        <Button mb={6} variant="ghost" onClick={() => navigate("/opportunities")}>
           ← Back to opportunities
         </Button>
 
-        <Box
-          bg={cardBg}
-          borderRadius="2xl"
-          p={{ base: 6, md: 8 }}
-          boxShadow="sm"
-          borderWidth="1px"
-          borderColor={useColorModeValue("gray.200", "gray.700")}
-        >
-          <Stack spacing={4}>
-            <HStack justify="space-between" align="flex-start">
-              <Box>
-                <Heading size="xl" mb={2}>
-                  {opportunity.title}
-                </Heading>
-                <Text fontSize="md" color="gray.600">
-                  {opportunity.organization}
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+          <Box
+            gridColumn={{ base: "1 / -1", md: "1 / span 2" }}
+            bg={cardBg}
+            borderRadius="2xl"
+            p={{ base: 6, md: 8 }}
+            boxShadow="lg"
+            borderWidth="1px"
+            borderColor={useColorModeValue("gray.200", "gray.700")}
+          >
+            <Stack spacing={4}>
+              <Image
+                src="/images/vhub.jpg"
+                alt={opportunity.title}
+                borderRadius="xl"
+                objectFit="cover"
+                maxH="260px"
+                w="100%"
+              />
+              <HStack justify="space-between" align="flex-start">
+                <Box>
+                  <Heading size="xl" mb={2}>
+                    {opportunity.title}
+                  </Heading>
+                  <Text fontSize="md" color="gray.600">
+                    {opportunity.organization}
+                  </Text>
+                </Box>
+                {opportunity.category && (
+                  <Tag size="md" variant="subtle" colorScheme="blue">
+                    {opportunity.category}
+                  </Tag>
+                )}
+              </HStack>
+
+              <HStack spacing={3} fontSize="sm" color="gray.600" flexWrap="wrap">
+                <Badge variant="subtle">{opportunity.location}</Badge>
+                <Badge colorScheme="green">{opportunity.mode || "In-person"}</Badge>
+                <Badge colorScheme="purple">{opportunity.timeCommitment || "Flexible"}</Badge>
+                {typeof opportunity.spotsRemaining === "number" && (
+                  <Badge colorScheme={opportunity.spotsRemaining > 5 ? "blue" : "red"}>
+                    Spots left: {opportunity.spotsRemaining}
+                  </Badge>
+                )}
+                <Text>
+                  {new Date(opportunity.date).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
                 </Text>
-              </Box>
-              {opportunity.category && (
-                <Tag size="md" variant="subtle">
-                  {opportunity.category}
-                </Tag>
-              )}
-            </HStack>
+              </HStack>
 
-            <HStack spacing={4} fontSize="sm" color="gray.600">
-              <Badge variant="subtle">{opportunity.location}</Badge>
-              <Text>
-                {new Date(opportunity.date).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
+              <Text fontSize="md" color="gray.700">
+                {opportunity.description}
               </Text>
-            </HStack>
 
-            <Text fontSize="md" color="gray.700">
-              {opportunity.description}
+              {opportunity.skills && (
+                <Box>
+                  <Heading size="sm" mb={2}>
+                    Skills
+                  </Heading>
+                  <HStack spacing={2} flexWrap="wrap">
+                    {opportunity.skills.map((s) => (
+                      <Badge key={s} colorScheme="blue">
+                        {s}
+                      </Badge>
+                    ))}
+                  </HStack>
+                </Box>
+              )}
+
+              <HStack spacing={3} pt={2} flexWrap="wrap">
+                <Button colorScheme="teal" onClick={handleApply} isDisabled={isApplied}>
+                  {isApplied ? "Applied" : "Apply"}
+                </Button>
+                <Button variant="outline" onClick={handleToggleSave}>
+                  {isSaved ? "Unsave" : "Save for later"}
+                </Button>
+              </HStack>
+            </Stack>
+          </Box>
+
+          <VStack
+            spacing={4}
+            align="stretch"
+            bg={cardBg}
+            borderRadius="2xl"
+            p={{ base: 6, md: 8 }}
+            boxShadow="lg"
+            borderWidth="1px"
+            borderColor={useColorModeValue("gray.200", "gray.700")}
+          >
+            <Heading size="md">Quick info</Heading>
+            <Text fontSize="sm" color="gray.600">
+              Contact: {opportunity.contactEmail} {opportunity.contactPhone ? `• ${opportunity.contactPhone}` : ""}
             </Text>
+            {opportunity.tags && (
+              <Stack spacing={2}>
+                <Heading size="sm">Tags</Heading>
+                <HStack spacing={2} flexWrap="wrap">
+                  {opportunity.tags.map((t) => (
+                    <Badge key={t} colorScheme="gray">
+                      {t}
+                    </Badge>
+                  ))}
+                </HStack>
+              </Stack>
+            )}
+            <Divider />
+            <Stack spacing={3}>
+              <Heading size="sm">What to expect</Heading>
+              <Text fontSize="sm" color="gray.700">
+                Clear onboarding, day-of instructions, and a point of contact will be provided once you apply.
+              </Text>
+            </Stack>
+            <Stack spacing={3}>
+              <Heading size="sm">Location</Heading>
+              <Text fontSize="sm" color="gray.700">
+                {opportunity.location}
+              </Text>
+            </Stack>
+          </VStack>
+        </SimpleGrid>
 
-            <HStack spacing={3} pt={4}>
-              <Button colorScheme="teal" onClick={handleApply} isDisabled={isApplied}>
-                {isApplied ? "Applied" : "Apply"}
-              </Button>
-              <Button variant="outline" onClick={handleToggleSave}>
-                {isSaved ? "Unsave" : "Save for later"}
-              </Button>
-            </HStack>
-          </Stack>
-        </Box>
+        {related && related.length > 0 && (
+          <Box mt={10}>
+            <Heading size="md" mb={4}>Related Opportunities</Heading>
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+              {related.map((opp) => (
+                <Box
+                  key={opp.id}
+                  p={4}
+                  bg={cardBg}
+                  borderRadius="lg"
+                  boxShadow="md"
+                  borderWidth="1px"
+                  borderColor={useColorModeValue("gray.200", "gray.700")}
+                >
+                  <Heading size="sm" mb={1}>{opp.title}</Heading>
+                  <Text fontSize="sm" color="gray.600" mb={1}>{opp.organization}</Text>
+                  <HStack spacing={2} mb={2} fontSize="sm" color="gray.600">
+                    <Badge>{opp.location}</Badge>
+                    {opp.category && <Badge colorScheme="blue">{opp.category}</Badge>}
+                  </HStack>
+                  <Text fontSize="sm" color="gray.700" noOfLines={3}>{opp.description}</Text>
+                  <Button
+                    mt={3}
+                    size="sm"
+                    colorScheme="blue"
+                    variant="outline"
+                    onClick={() => navigate(`/opportunities/${opp.id}`)}
+                  >
+                    View
+                  </Button>
+                </Box>
+              ))}
+            </SimpleGrid>
+          </Box>
+        )}
       </Container>
     </Box>
   );
 }
-
-
 

@@ -1,0 +1,51 @@
+{% extends "base_email.html" %}
+
+{% macro vehicle_block(vehicle) -%}
+{% if vehicle and (vehicle.year or vehicle.make or vehicle.model or vehicle.type or vehicle.concern) %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;border-collapse:collapse;">
+    <tr>
+        <td style="font-weight:600;padding:8px 0;color: {{ ACCENT_COLOR }};">Vehicle Details</td>
+    </tr>
+    <tr>
+        <td>
+            <table role="presentation" cellpadding="8" cellspacing="0"
+                style="border:1px solid #e5e7eb;border-collapse:collapse;width:100%;font-size:14px;">
+                {% if vehicle.year %}<tr>
+                    <td style="border-bottom:1px solid #e5e7eb;"><strong>Year:</strong> {{ vehicle.year }}</td>
+                </tr>{% endif %}
+                {% if vehicle.make %}<tr>
+                    <td style="border-bottom:1px solid #e5e7eb;"><strong>Make:</strong> {{ vehicle.make }}</td>
+                </tr>{% endif %}
+                {% if vehicle.model %}<tr>
+                    <td style="border-bottom:1px solid #e5e7eb;"><strong>Model:</strong> {{ vehicle.model }}</td>
+                </tr>{% endif %}
+                {% if vehicle.type %}<tr>
+                    <td style="border-bottom:1px solid #e5e7eb;"><strong>Type:</strong> {{ vehicle.type }}</td>
+                </tr>{% endif %}
+                {% if vehicle.concern %}<tr>
+                    <td><strong>Concern:</strong> {{ vehicle.concern }}</td>
+                </tr>{% endif %}
+            </table>
+        </td>
+    </tr>
+</table>
+{% endif %}
+{%- endmacro %}
+
+{% block content %}
+<h3 style="color: {{ ACCENT_COLOR }};">Thank you, {{ user_name }}!</h3>
+<p>We've received your inquiry and will respond shortly.</p>
+
+{% if message %}
+<p><strong>Your Message:</strong><br>{{ message }}</p>
+{% endif %}
+
+{{ vehicle_block(vehicle) }}
+
+{% if items %}
+<p><strong>Selected Services:</strong></p>
+<ul>{% for item in items %}<li>{{ item }}</li>{% endfor %}</ul>
+{% endif %}
+
+<p>Warm regards,<br><strong>{{ CEO_NAME }}</strong><br><em>Owner &amp; CEO, {{ BRAND_NAME }}</em></p>
+{% endblock %}

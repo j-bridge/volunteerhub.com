@@ -1,4 +1,3 @@
-/* Make the app fill the viewport and allow full-width layouts */
 html, body, #root {
   height: 100%;
   width: 100%;
@@ -6,33 +5,7 @@ html, body, #root {
   padding: 0;
 }
 
-/* Reset the Vite template body flex centering */
 body {
-  display: block;       /* was: flex */
-  min-width: 0;         /* was: 320px */
-  min-height: 100vh;
-  background: #ffffff;  /* optional: use white page background */
-  color: #213547;       /* optional: default text color */
+  background: var(--vh-bg, #f8f9fa);
+  color: var(--vh-text, #334155);
 }
-
-/* Optional basic link/button tweaks — keep if you like */
-a { color: #646cff; text-decoration: none; }
-a:hover { color: #535bf2; }
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background: #f9f9f9;
-  cursor: pointer;
-  transition: border-color .25s;
-}
-button:hover { border-color: #646cff; }
-
-/* Light mode preference (optional) */
-@media (prefers-color-scheme: light) {
-  body { background: #ffffff; color: #213547; }
-}
-

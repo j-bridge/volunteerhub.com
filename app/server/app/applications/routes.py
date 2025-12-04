@@ -5,7 +5,7 @@ from ..models import Application, Opportunity, User
 from ..permissions import organization_required
 from ..schemas import ApplicationSchema, ApplicationCreateSchema, ApplicationReviewSchema
 from marshmallow import ValidationError
-from ..utils.emailer import send_email
+from ..utils.emailer import send_email, send_templated_email
 
 bp = Blueprint("applications", __name__)
 application_schema = ApplicationSchema()
@@ -47,33 +47,28 @@ def create_application():
         opp_link = f"{frontend}/opportunities/{opp_id}"
 
         if applicant and opportunity:
-            send_email(
+            send_templated_email(
                 subject=f"Application received: {opportunity.title}",
                 recipients=applicant.email,
-                text_body=(
-                    f"Hi {applicant.name or 'there'},\n\n"
-                    f"We've received your application for \"{opportunity.title}\".\n"
-                    f"View the opportunity: {opp_link}\n\n"
-                    "Thank you for volunteering!"
-                ),
-                html_body=(
-                    f"<p>Hi {applicant.name or 'there'},</p>"
-                    f"<p>We&apos;ve received your application for <strong>{opportunity.title}</strong>.</p>"
-                    f"<p><a href='{opp_link}'>View the opportunity</a></p>"
-                    "<p>Thank you for volunteering!</p>"
-                ),
+                template_name="application_submitted_email.html",
+                context={
+                    "user_name": applicant.name,
+                    "opportunity_title": opportunity.title,
+                    "opportunity_url": opp_link,
+                },
             )
 
             contact_email = opportunity.organization.contact_email if opportunity.organization else None
             if contact_email:
-                send_email(
+                send_templated_email(
                     subject=f"New volunteer application for {opportunity.title}",
                     recipients=contact_email,
-                    text_body=(
-                        f"A new volunteer applied for \"{opportunity.title}\".\n\n"
-                        f"Applicant: {applicant.email}\n"
-                        f"Opportunity link: {opp_link}"
-                    ),
+                    template_name="application_notification_email.html",
+                    context={
+                        "opportunity_title": opportunity.title,
+                        "applicant_email": applicant.email,
+                        "opportunity_url": opp_link,
+                    },
                 )
     except Exception:
         current_app.logger.exception("Failed to send application notification")

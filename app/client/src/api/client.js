@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const RAW_BASE = (import.meta.env.VITE_API_URL || "http://127.0.0.1:5000").replace(/\/+$/, "");
+const envBase = import.meta?.env?.VITE_API_URL;
+const runtimeOrigin = typeof window !== "undefined" ? window.location.origin : null;
+const fallbackBase = runtimeOrigin || "http://127.0.0.1:5001";
+const RAW_BASE = (envBase || fallbackBase).replace(/\/+$/, "");
 const API_BASE = RAW_BASE.endsWith("/api") ? RAW_BASE : `${RAW_BASE}/api`;
 
 export const api = axios.create({
