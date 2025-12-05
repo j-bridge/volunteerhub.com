@@ -50,7 +50,9 @@ def org_or_admin_required(org_id_arg: str = "org_id") -> Callable:
             if user.is_admin():
                 return fn(*args, **kwargs)
 
-            org_id = kwargs.get(org_id_arg) or (request.json or {}).get(org_id_arg) or request.args.get(org_id_arg)
+            # Avoid triggering a 415 by touching request.json on GET requests without a JSON body
+            json_payload = request.get_json(silent=True) or {}
+            org_id = kwargs.get(org_id_arg) or request.args.get(org_id_arg) or json_payload.get(org_id_arg)
             if not org_id:
                 abort(400, description="Organization id required")
 
@@ -75,7 +77,9 @@ def org_admin_or_site_admin_required(org_id_arg: str = "org_id") -> Callable:
             if user.is_admin():
                 return fn(*args, **kwargs)
 
-            org_id = kwargs.get(org_id_arg) or (request.json or {}).get(org_id_arg) or request.args.get(org_id_arg)
+            # Avoid Unsupported Media Type errors by safely reading optional JSON
+            json_payload = request.get_json(silent=True) or {}
+            org_id = kwargs.get(org_id_arg) or request.args.get(org_id_arg) or json_payload.get(org_id_arg)
             if not org_id:
                 abort(400, description="Organization id required")
             org = db.session.get(Organization, org_id)

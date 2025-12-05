@@ -16,20 +16,49 @@ import { Link as RouterLink } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
-const toEmbedUrl = (url) => {
+const toEmbedUrl = (url, { autoplay = false } = {}) => {
   try {
-    const parsed = new URL(url);
-    if (parsed.hostname.includes("youtu.be")) {
+    const cleanUrl = (url || "").trim();
+    if (!cleanUrl) return null;
+    const parsed = new URL(cleanUrl);
+    const host = parsed.hostname;
+
+    if (host.includes("youtu.be")) {
       const id = parsed.pathname.replace("/", "");
-      return id ? `https://www.youtube.com/embed/${id}` : null;
+      if (!id) return null;
+      const query = new URLSearchParams();
+      query.set("controls", "1");
+      query.set("rel", "0");
+      if (autoplay) {
+        query.set("autoplay", "1");
+        query.set("mute", "1");
+      }
+      return `https://www.youtube.com/embed/${id}?${query.toString()}`;
     }
-    if (parsed.hostname.includes("youtube.com")) {
+
+    if (host.includes("youtube.com")) {
       const id = parsed.searchParams.get("v") || parsed.pathname.split("/").pop();
-      return id ? `https://www.youtube.com/embed/${id}` : null;
+      if (!id) return null;
+      const query = new URLSearchParams();
+      query.set("controls", "1");
+      query.set("rel", "0");
+      if (autoplay) {
+        query.set("autoplay", "1");
+        query.set("mute", "1");
+      }
+      return `https://www.youtube.com/embed/${id}?${query.toString()}`;
     }
-    if (parsed.hostname.includes("vimeo.com")) {
+
+    if (host.includes("vimeo.com")) {
       const id = parsed.pathname.split("/").filter(Boolean).pop();
-      return id ? `https://player.vimeo.com/video/${id}` : null;
+      if (!id) return null;
+      const query = new URLSearchParams();
+      query.set("controls", "1");
+      if (autoplay) {
+        query.set("autoplay", "1");
+        query.set("muted", "1");
+      }
+      return `https://player.vimeo.com/video/${id}?${query.toString()}`;
     }
   } catch {
     return null;
@@ -37,8 +66,8 @@ const toEmbedUrl = (url) => {
   return null;
 };
 
-const VideoCard = ({ video }) => {
-  const embed = useMemo(() => toEmbedUrl(video.video_url), [video.video_url]);
+const VideoCard = ({ video, hideTimestamp = false, expanded = false, onToggleExpand }) => {
+  const embed = useMemo(() => toEmbedUrl(video.video_url, { autoplay: true }), [video.video_url]);
   const cardBg = useColorModeValue("#f8f6f2", "gray.800");
   const textColor = useColorModeValue("gray.600", "gray.300");
   const subText = useColorModeValue("gray.500", "gray.400");
@@ -52,14 +81,20 @@ const VideoCard = ({ video }) => {
             {video.status}
           </Badge>
         </Stack>
-        <Text color={textColor} noOfLines={2}>
+        <Text color={textColor} noOfLines={expanded ? undefined : 2}>
           {video.description || "No description provided."}
         </Text>
+        {video.description && video.description.length > 120 && (
+          <Button onClick={onToggleExpand} size="xs" variant="link" colorScheme="teal" alignSelf="flex-start">
+            {expanded ? "Show less" : "Show more"}
+          </Button>
+        )}
         {embed ? (
           <Box
             as="iframe"
             src={embed}
             title={video.title}
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             width="100%"
             height="220px"
@@ -67,20 +102,83 @@ const VideoCard = ({ video }) => {
             borderRadius="md"
           />
         ) : (
-          <Button
-            as={Link}
-            href={video.video_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="outline"
-            colorScheme="teal"
-          >
-            Open video
+          <Box
+            as="video"
+            src={video.video_url}
+            width="100%"
+            height="auto"
+            borderRadius="md"
+            controls
+            autoPlay
+            muted
+            playsInline
+            style={{ backgroundColor: "#000" }}
+          />
+        )}
+      </Stack>
+    </Box>
+  );
+};
+
+const FeaturedVideo = ({ video, embedUrl, expanded, onToggleExpand }) => {
+  const cardBg = useColorModeValue("#ffffff", "var(--vh-ink-soft)");
+  const borderColor = useColorModeValue("rgba(26,165,154,0.25)", "rgba(26,165,154,0.45)");
+  const textColor = useColorModeValue("#1f262a", "gray.100");
+  const muted = useColorModeValue("gray.600", "rgba(231,247,244,0.8)");
+
+  return (
+    <Box
+      bg={cardBg}
+      borderRadius="xl"
+      borderWidth="1px"
+      borderColor={borderColor}
+      p={{ base: 4, md: 6 }}
+      mb={8}
+      boxShadow="0 20px 50px rgba(0,0,0,0.18)"
+    >
+      <Stack spacing={4}>
+        <Stack direction={{ base: "column", md: "row" }} justify="space-between" align={{ base: "flex-start", md: "center" }}>
+          <Heading size="lg" color={textColor}>
+            Featured Project
+          </Heading>
+          <Badge colorScheme="green" variant="solid">
+            {video.status}
+          </Badge>
+        </Stack>
+        <Text color={muted} noOfLines={expanded ? undefined : 3}>
+          {video.description || "No description provided."}
+        </Text>
+        {video.description && video.description.length > 160 && (
+          <Button onClick={onToggleExpand} size="sm" variant="link" colorScheme="teal" alignSelf="flex-start">
+            {expanded ? "Show less" : "Read full description"}
           </Button>
         )}
-        <Text fontSize="sm" color={subText}>
-          Submitted {new Date(video.created_at).toLocaleString()}
-        </Text>
+        {embedUrl ? (
+          <Box
+            as="iframe"
+            src={embedUrl}
+            title={video.title}
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            width="100%"
+            height="420px"
+            border="0"
+            borderRadius="lg"
+          />
+        ) : (
+          <Box
+            as="video"
+            src={video.video_url}
+            width="100%"
+            height="auto"
+            borderRadius="lg"
+            controls
+            autoPlay
+            muted
+            playsInline
+            style={{ backgroundColor: "#000" }}
+          />
+        )}
       </Stack>
     </Box>
   );
@@ -90,6 +188,8 @@ export default function VideoGallery() {
   const { user } = useAuth();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedIds, setExpandedIds] = useState({});
+  const [featuredExpanded, setFeaturedExpanded] = useState(false);
   const pageBg = useColorModeValue("#f2f0eb", "#08141a");
   const textColor = useColorModeValue("#1f262a", "gray.300");
   const cardBg = useColorModeValue("#f8f6f2", "var(--vh-ink-soft)");
@@ -113,11 +213,17 @@ export default function VideoGallery() {
     fetchVideos();
   }, []);
 
+  const approvedVideos = videos.filter((v) => v.status === "approved");
+  const featuredVideo = approvedVideos[0] || null;
+  const featuredEmbedUrl = featuredVideo ? toEmbedUrl(featuredVideo.video_url, { autoplay: true }) : null;
+  const showFeatured = Boolean(featuredVideo);
+  const remainingVideos = showFeatured ? videos.filter((v) => v.id !== featuredVideo.id) : videos;
+
   return (
     <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }}>
       <Container maxW="6xl">
         <Stack spacing={4} mb={6}>
-          <Heading size="2xl">Video Submissions</Heading>
+          <Heading size="2xl">Project Submission</Heading>
           <Text fontSize="lg" color={textColor}>
             Watch approved volunteer stories and organization highlights. Submit your own to be featured.
           </Text>
@@ -135,13 +241,46 @@ export default function VideoGallery() {
           </Stack>
         </Stack>
 
+        {showFeatured && featuredVideo && (
+          <>
+            <FeaturedVideo
+              video={featuredVideo}
+              embedUrl={featuredEmbedUrl}
+              expanded={featuredExpanded}
+              onToggleExpand={() => setFeaturedExpanded((v) => !v)}
+            />
+            <Box
+              bg={cardBg}
+              borderRadius="lg"
+              borderWidth="1px"
+              borderColor={cardBorder}
+              p={4}
+              shadow="sm"
+              mb={6}
+            >
+              <Heading size="sm" mb={2} color={textColor}>
+                GitHub repository for this site
+              </Heading>
+              <Link
+                href="https://github.com/j-bridge/volunteerhub.com.git"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="teal.500"
+                fontWeight="600"
+              >
+                https://github.com/j-bridge/volunteerhub.com.git
+              </Link>
+            </Box>
+          </>
+        )}
+
         {loading ? (
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
             {[1, 2, 3, 4].map((n) => (
               <Skeleton key={n} height="260px" borderRadius="lg" />
             ))}
           </SimpleGrid>
-        ) : videos.length === 0 ? (
+        ) : remainingVideos.length === 0 ? (
           <Box
             bg={cardBg}
             color={emptyHeading}
@@ -160,9 +299,44 @@ export default function VideoGallery() {
           </Box>
         ) : (
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-            {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
+            {remainingVideos.map((video, idx) => {
+              const hideTimestamp = !featuredVideo && idx === 0;
+              return (
+                <Stack key={video.id} spacing={3}>
+                  <VideoCard
+                    video={video}
+                    hideTimestamp={hideTimestamp}
+                    expanded={!!expandedIds[video.id]}
+                    onToggleExpand={() =>
+                      setExpandedIds((cur) => ({ ...cur, [video.id]: !cur[video.id] }))
+                    }
+                  />
+                  {!featuredVideo && idx === 0 && (
+                    <Box
+                      bg={cardBg}
+                      borderRadius="lg"
+                      borderWidth="1px"
+                      borderColor={cardBorder}
+                      p={4}
+                      shadow="sm"
+                    >
+                      <Heading size="sm" mb={2} color={textColor}>
+                        GitHub repository for this site
+                      </Heading>
+                      <Link
+                        href="https://github.com/j-bridge/volunteerhub.com.git"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        color="teal.500"
+                        fontWeight="600"
+                      >
+                        https://github.com/j-bridge/volunteerhub.com.git
+                      </Link>
+                    </Box>
+                  )}
+                </Stack>
+              );
+            })}
           </SimpleGrid>
         )}
       </Container>

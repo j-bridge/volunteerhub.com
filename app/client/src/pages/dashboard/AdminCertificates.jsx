@@ -18,7 +18,7 @@ import {
   Th,
   Thead,
   Tr,
-  Link,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { api } from "../../api/client";
 import useAppToast from "../../hooks/useAppToast";
@@ -32,6 +32,13 @@ export default function AdminCertificates() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const toast = useAppToast();
+  const pageBg = useColorModeValue("#f2f0eb", "#08141a");
+  const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
+  const borderColor = useColorModeValue("rgba(26,165,154,0.25)", "rgba(26,165,154,0.45)");
+  const textPrimary = useColorModeValue("gray.800", "gray.100");
+  const textMuted = useColorModeValue("gray.600", "rgba(231,247,244,0.75)");
+  const tableBorder = useColorModeValue("#e2e8f0", "rgba(255,255,255,0.08)");
+  const headerBg = useColorModeValue("#f7fafc", "rgba(255,255,255,0.04)");
 
   const [form, setForm] = useState({
     volunteerEmail: "",
@@ -144,15 +151,15 @@ export default function AdminCertificates() {
   }, [selectedOrg]);
 
   return (
-    <Box bg="gray.50" minH="100vh" py={{ base: 10, md: 16 }}>
+    <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }}>
       <Container maxW="7xl">
         <Stack spacing={8}>
-          <Heading size="2xl">Certificates (Admin)</Heading>
-          <Text color="gray.600">
+          <Heading size="2xl" color={textPrimary}>Certificates (Admin)</Heading>
+          <Text color={textMuted}>
             Issue certificates on behalf of any organization and view the global ledger of issued PDFs.
           </Text>
 
-          <Box p={6} bg="white" rounded="xl" shadow="md" borderWidth="1px">
+          <Box p={6} bg={cardBg} rounded="xl" shadow="md" borderWidth="1px" borderColor={borderColor}>
             <form onSubmit={handleIssue}>
               <Stack spacing={4}>
                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
@@ -229,9 +236,9 @@ export default function AdminCertificates() {
             </form>
           </Box>
 
-          <Box p={6} bg="white" rounded="xl" shadow="md" borderWidth="1px">
+          <Box p={6} bg={cardBg} rounded="xl" shadow="md" borderWidth="1px" borderColor={borderColor}>
             <Stack direction={{ base: "column", md: "row" }} justify="space-between" align="center" mb={3}>
-              <Heading size="md">Issued Certificates</Heading>
+              <Heading size="md" color={textPrimary}>Issued Certificates</Heading>
               <Stack direction={{ base: "column", sm: "row" }} spacing={3}>
                 <Select
                   placeholder="Filter by org"
@@ -251,42 +258,42 @@ export default function AdminCertificates() {
                 </Button>
               </Stack>
             </Stack>
-            <Table size="sm">
-              <Thead>
+            <Table size="sm" variant="simple">
+              <Thead bg={headerBg}>
                 <Tr>
-                  <Th>ID</Th>
-                  <Th>Volunteer</Th>
-                  <Th>Organization</Th>
-                  <Th>Hours</Th>
-                  <Th>Issued</Th>
-                  <Th>Download</Th>
+                  <Th borderColor={tableBorder}>ID</Th>
+                  <Th borderColor={tableBorder}>Volunteer</Th>
+                  <Th borderColor={tableBorder}>Organization</Th>
+                  <Th borderColor={tableBorder}>Hours</Th>
+                  <Th borderColor={tableBorder}>Issued</Th>
+                  <Th borderColor={tableBorder}>Download</Th>
                 </Tr>
               </Thead>
               <Tbody>
                 {(certificates || []).map((c) => (
                   <Tr key={c.id}>
-                    <Td>#{c.id}</Td>
-                    <Td>{c.volunteer_id}</Td>
-                    <Td>{c.organization_id}</Td>
-                    <Td>
+                    <Td borderColor={tableBorder}>#{c.id}</Td>
+                    <Td borderColor={tableBorder}>{c.volunteer_id}</Td>
+                    <Td borderColor={tableBorder}>{c.organization_id}</Td>
+                    <Td borderColor={tableBorder}>
                       <Badge colorScheme="teal">{c.hours}</Badge>
                     </Td>
-                    <Td>{formatDate(c.issued_at)}</Td>
-                    <Td>
+                    <Td borderColor={tableBorder}>{formatDate(c.issued_at)}</Td>
+                    <Td borderColor={tableBorder}>
                       {c.download_url ? (
                         <Button size="xs" variant="outline" onClick={() => downloadPdf(c)}>
                           Download
                         </Button>
                       ) : (
-                        <Text color="gray.500">—</Text>
+                        <Text color={textMuted}>—</Text>
                       )}
                     </Td>
                   </Tr>
                 ))}
                 {(!certificates || certificates.length === 0) && (
                   <Tr>
-                    <Td colSpan={6}>
-                      <Text color="gray.600">No certificates issued yet.</Text>
+                    <Td colSpan={6} borderColor={tableBorder}>
+                      <Text color={textMuted}>No certificates issued yet.</Text>
                     </Td>
                   </Tr>
                 )}

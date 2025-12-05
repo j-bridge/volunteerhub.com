@@ -1,12 +1,12 @@
 import { useToast } from "@chakra-ui/react";
 
 /**
- * App-wide toast wrapper with slower animation and longer display.
- * Duration defaults to 6s and slide transition is slowed slightly.
+ * App-wide toast wrapper with slower, gentler display.
+ * Duration defaults to 8s to avoid flashes.
  */
 export default function useAppToast(defaults = {}) {
   const toast = useToast({
-    duration: 6000,
+    duration: 8000,
     isClosable: true,
     position: "top",
     ...defaults,
@@ -14,10 +14,9 @@ export default function useAppToast(defaults = {}) {
 
   return (options = {}) =>
     toast({
-      duration: 6000,
+      duration: options.duration ?? 8000,
       isClosable: true,
       position: "top",
-      transition: { duration: 0.5 },
       ...options,
     });
 }

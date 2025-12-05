@@ -3,10 +3,11 @@ from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from sqlalchemy import select
 
 from ..extensions import db
-from ..models import User
+from ..models import User, Application, VideoSubmission, Certificate
 from ..schemas import UserSchema, ChangeRoleSchema, UserUpdateSchema
 from ..permissions import role_required
 from marshmallow import ValidationError
+from ..utils.emailer import send_email
 
 bp = Blueprint("users", __name__)
 user_schema = UserSchema()
@@ -129,4 +130,54 @@ def admin_update_user(user_id: int):
         user.role = payload["role"]
 
     db.session.commit()
+
+    try:
+        send_email(
+            subject="Your VolunteerHub account was updated",
+            recipients=user.email,
+            text_body=(
+                "Hello,\n\n"
+                "An administrator updated your VolunteerHub account details (name, email, or role). "
+                "If you did not request this change, please contact support.\n\n"
+                "Thank you,\nVolunteerHub Team"
+            ),
+        )
+    except Exception:
+        # Fail silently so the update still succeeds even if email sending fails.
+        pass
+
     return jsonify({"user": user_schema.dump(user)})
+
+
+@bp.delete("/<int:user_id>")
+@jwt_required()
+@role_required("admin")
+def delete_user(user_id: int):
+    """Allow admins to delete user accounts."""
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # Prevent deleting own account to avoid accidental lockout.
+    current_id = _current_user_id()
+    if current_id and user.id == current_id:
+        return jsonify({"error": "You cannot delete your own account"}), 400
+
+    # Prevent deletion when related records exist to avoid integrity errors.
+    applications_count = db.session.query(Application.id).filter_by(user_id=user.id).count()
+    videos_count = db.session.query(VideoSubmission.id).filter_by(user_id=user.id).count()
+    certs_count = db.session.query(Certificate.id).filter(
+        (Certificate.volunteer_id == user.id) | (Certificate.issued_by_id == user.id)
+    ).count()
+
+    if applications_count or videos_count or certs_count:
+        return jsonify({
+            "error": "User cannot be deleted while linked records exist",
+            "applications": applications_count,
+            "videos": videos_count,
+            "certificates": certs_count,
+        }), 400
+
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": "User deleted"}), 200

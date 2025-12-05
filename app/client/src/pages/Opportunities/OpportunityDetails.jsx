@@ -10,6 +10,13 @@ import {
   Badge,
   Button,
   useColorModeValue,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
   Divider,
   SimpleGrid,
   VStack,
@@ -29,11 +36,15 @@ export default function OpportunityDetails() {
   const toast = useAppToast();
   const [opportunity, setOpportunity] = useState(null);
   const [related, setRelated] = useState([]);
+  const [applying, setApplying] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   const pageBg = useColorModeValue("#f2f0eb", "#08141a");
   const cardBg = useColorModeValue("white", "var(--vh-ink-soft)");
   const textPrimary = useColorModeValue("#1f262a", "var(--vh-ink-text)");
   const textMuted = useColorModeValue("#4a5561", "rgba(231,247,244,0.78)");
+  const isNumericId = /^\d+$/.test(String(id || ""));
 
   const normalizeApiOpp = (opp) => ({
     id: opp.id,
@@ -51,6 +62,29 @@ export default function OpportunityDetails() {
 
   useEffect(() => {
     const load = async () => {
+      // Skip API calls for non-numeric IDs (unsynced/local) to avoid server errors
+      if (!isNumericId) {
+        const localMatch =
+          user?.createdOpportunities?.find((o) => String(o.id) === String(id)) ||
+          user?.savedOpportunities?.find((o) => String(o.id) === String(id)) ||
+          user?.appliedOpportunities?.find((o) => String(o.id) === String(id));
+
+        if (localMatch) {
+          setOpportunity({
+            ...localMatch,
+            organization:
+              typeof localMatch.organization === "string"
+                ? localMatch.organization
+                : localMatch.organization?.name || "Organization",
+          });
+        } else {
+          setLoadError("This opportunity has not finished syncing yet. Please refresh after it’s created.");
+          setOpportunity(null);
+        }
+        setRelated([]);
+        return;
+      }
+
       try {
         const res = await api.get(`/opportunities/${id}`);
         if (res.data?.opportunity) {
@@ -87,7 +121,7 @@ export default function OpportunityDetails() {
       );
     };
     load();
-  }, [id]);
+  }, [id, isNumericId, user]);
 
   if (!opportunity) {
     return (
@@ -97,8 +131,8 @@ export default function OpportunityDetails() {
             Opportunity not found
           </Heading>
           <Text mb={6} color={textMuted}>
-            We couldn&apos;t find the opportunity you&apos;re looking for. It may
-            have been removed or the link is invalid.
+            {loadError ||
+              "We couldn’t find the opportunity you’re looking for. It may have been removed or the link is invalid."}
           </Text>
           <Button onClick={() => navigate("/opportunities")} colorScheme="teal">
             Back to opportunities
@@ -115,7 +149,7 @@ export default function OpportunityDetails() {
     (o) => String(o.id) === String(opportunity.id)
   );
 
-  const handleApply = () => {
+  const handleApplyRequest = () => {
     if (!user) {
       navigate("/login", { state: { fromApply: true } });
       return;
@@ -144,10 +178,11 @@ export default function OpportunityDetails() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Apply for "${opportunity.title}" at ${opportunity.organization}?`
-    );
-    if (!confirmed) return;
+    setConfirmOpen(true);
+  };
+
+  const handleApplyConfirm = async () => {
+    setConfirmOpen(false);
 
     const summary = {
       id: opportunity.id,
@@ -158,15 +193,25 @@ export default function OpportunityDetails() {
       category: opportunity.category,
     };
 
-    applyToOpportunity(summary);
-
-    toast({
-      title: "Application recorded",
-      description: "This opportunity now appears in your dashboard.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+    setApplying(true);
+    try {
+      await api.post("/applications/", { opportunity_id: opportunity.id });
+      applyToOpportunity(summary);
+      toast({
+        title: "Application submitted",
+        description: "This opportunity now appears in your dashboard.",
+        status: "success",
+      });
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Could not submit application";
+      toast({
+        title: "Error",
+        description: msg,
+        status: "error",
+      });
+    } finally {
+      setApplying(false);
+    }
   };
 
   const handleToggleSave = () => {
@@ -295,7 +340,7 @@ export default function OpportunityDetails() {
               )}
 
               <HStack spacing={3} pt={2} flexWrap="wrap">
-                <Button colorScheme="teal" onClick={handleApply} isDisabled={isApplied}>
+                <Button colorScheme="teal" onClick={handleApplyRequest} isDisabled={isApplied || applying} isLoading={applying}>
                   {isApplied ? "Applied" : "Apply"}
                 </Button>
                 <Button variant="outline" onClick={handleToggleSave}>
@@ -361,13 +406,13 @@ export default function OpportunityDetails() {
                   borderWidth="1px"
                   borderColor={useColorModeValue("gray.200", "gray.700")}
                 >
-                  <Heading size="sm" mb={1}>{opp.title}</Heading>
-                  <Text fontSize="sm" color="gray.600" mb={1}>{opp.organization}</Text>
-                  <HStack spacing={2} mb={2} fontSize="sm" color="gray.600">
+                  <Heading size="sm" mb={1} color={textPrimary}>{opp.title}</Heading>
+                  <Text fontSize="sm" color={textMuted} mb={1}>{opp.organization}</Text>
+                  <HStack spacing={2} mb={2} fontSize="sm" color={textMuted}>
                     <Badge>{opp.location}</Badge>
                     {opp.category && <Badge colorScheme="blue">{opp.category}</Badge>}
                   </HStack>
-                  <Text fontSize="sm" color="gray.700" noOfLines={3}>{opp.description}</Text>
+                  <Text fontSize="sm" color={textPrimary} noOfLines={3}>{opp.description}</Text>
                   <Button
                     mt={3}
                     size="sm"
@@ -383,6 +428,27 @@ export default function OpportunityDetails() {
           </Box>
         )}
       </Container>
+
+      <Modal isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Apply for this opportunity?</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text>
+              Confirm you want to apply for &quot;{opportunity?.title}&quot; at {opportunity?.organization}.
+            </Text>
+          </ModalBody>
+          <ModalFooter gap={3}>
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button colorScheme="teal" onClick={handleApplyConfirm} isLoading={applying}>
+              Yes, apply
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

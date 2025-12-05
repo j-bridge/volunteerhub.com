@@ -17,9 +17,13 @@ def _bool(value) -> bool:
 
 
 def _as_list(recipients: str | Sequence[str]) -> list[str]:
+    def _clean(item: str) -> str:
+        # Strip whitespace and common separators that can accidentally trail
+        return item.strip().strip(",;")
+
     if isinstance(recipients, str):
-        return [recipients]
-    return list(recipients)
+        return [_clean(recipients)]
+    return [_clean(r) for r in recipients if _clean(str(r))]
 
 
 def email_configured() -> bool:

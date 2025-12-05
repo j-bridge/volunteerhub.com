@@ -24,6 +24,12 @@ def submit_contact():
     except ValidationError as err:
         return jsonify({"error": "Validation error", "details": err.messages}), 400
 
+    payload["email"] = payload["email"].strip()
+    payload["name"] = payload["name"].strip()
+    if payload.get("organization"):
+        payload["organization"] = payload["organization"].strip()
+    payload["message"] = payload["message"].strip()
+
     inbox = _contact_inbox()
 
     context = {

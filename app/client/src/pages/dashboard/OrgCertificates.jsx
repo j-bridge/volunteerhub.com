@@ -23,10 +23,12 @@ import {
 } from "@chakra-ui/react";
 import { api } from "../../api/client";
 import useAppToast from "../../hooks/useAppToast";
+import { useAuth } from "../../context/AuthContext";
 
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : "—");
 
 export default function OrgCertificates() {
+  const { user } = useAuth();
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("");
   const [certificates, setCertificates] = useState([]);
@@ -48,6 +50,18 @@ export default function OrgCertificates() {
   });
 
   const loadOrganizations = async () => {
+    // Organization users can only issue certificates for their own org
+    if (user?.role === "organization") {
+      const orgOption =
+        user.organization_id && user.organization_name
+          ? [{ id: user.organization_id, name: user.organization_name }]
+          : [];
+      setOrganizations(orgOption);
+      setSelectedOrg(user.organization_id ? String(user.organization_id) : "");
+      return;
+    }
+
+    // Admins can see all orgs
     try {
       const res = await api.get("/orgs/");
       const list = res.data?.organizations || [];
@@ -137,7 +151,7 @@ export default function OrgCertificates() {
 
   useEffect(() => {
     loadOrganizations();
-  }, []);
+  }, [user?.organization_id, user?.organization_name, user?.role]);
 
   useEffect(() => {
     loadCertificates();

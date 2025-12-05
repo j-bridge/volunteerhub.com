@@ -43,6 +43,7 @@ export default function EditOpportunity() {
   const borderColor = useColorModeValue("rgba(26,165,154,0.28)", "rgba(26,165,154,0.45)");
 
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [title, setTitle] = useState("");
   const [organization, setOrganization] = useState("");
   const [date, setDate] = useState("");
@@ -52,7 +53,6 @@ export default function EditOpportunity() {
   const [status, setStatus] = useState("Open");
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const created = user?.createdOpportunities || [];
   const existing = created.find((o) => String(o.id) === String(id));
@@ -65,26 +65,59 @@ export default function EditOpportunity() {
     return d.toISOString().slice(0, 10);
   };
 
-  useEffect(() => {
-    if (!existing) {
-      setLoaded(true);
-      return;
-    }
+  const isNumericId = /^\d+$/.test(String(id || ""));
 
-    setTitle(existing.title || "");
-    setOrganization(existing.organization || "");
-    setDate(normalizeDateInput(existing.date) || "");
-    setLocation(existing.location || "");
-    setCategory(existing.category || "Community");
-    setDescription(existing.description || "");
-    setStatus(existing.status === "Draft" || existing.is_active === false ? "Draft" : "Open");
-    setLoaded(true);
+  const hydrateFrom = (source) => {
+    if (!source) return;
+    const orgName =
+      typeof source.organization === "string"
+        ? source.organization
+        : source.organization?.name;
+    setTitle(source.title || "");
+    setOrganization(orgName || source.organization_name || "");
+    setDate(normalizeDateInput(source.date || source.start_date) || "");
+    setLocation(source.location || "");
+    setCategory(source.category || "Community");
+    setDescription(source.description || "");
+    setStatus(source.status === "Draft" || source.is_active === false ? "Draft" : "Open");
+  };
+
+  useEffect(() => {
+    if (existing) {
+      hydrateFrom(existing);
+      setLoaded(true);
+    }
   }, [existing]);
+
+  useEffect(() => {
+    const loadFromApi = async () => {
+      if (!isNumericId) {
+        setLoadError("This opportunity has not synced to the server yet. Please refresh once it finishes saving.");
+        setLoaded(true);
+        return;
+      }
+      try {
+        const res = await api.get(`/opportunities/${id}`);
+        const opp = res.data?.opportunity;
+        if (opp) {
+          hydrateFrom({
+            ...opp,
+            organization_name: opp.organization?.name,
+            date: opp.start_date,
+          });
+        }
+      } catch (err) {
+        setLoadError("Could not load opportunity.");
+      } finally {
+        setLoaded(true);
+      }
+    };
+    loadFromApi();
+  }, [id]);
 
   const saveDraftAndExit = async () => {
     setClosing(true);
     try {
-      setShowConfirm(false);
       await api.patch(`/opportunities/${id}`, {
         is_active: false,
       });
@@ -95,7 +128,7 @@ export default function EditOpportunity() {
       toast({
         title: "Saved as draft",
         status: "info",
-        duration: 2500,
+        duration: 6000,
         isClosable: true,
       });
       navigate("/org/dashboard");
@@ -104,7 +137,7 @@ export default function EditOpportunity() {
       toast({
         title: msg,
         status: "error",
-        duration: 3000,
+        duration: 6000,
         isClosable: true,
       });
     } finally {
@@ -113,8 +146,18 @@ export default function EditOpportunity() {
   };
 
   const handleExitWithoutSave = () => {
-    setShowConfirm(false);
     navigate(-1);
+  };
+
+  const handleCancel = async () => {
+    const confirmSave = window.confirm(
+      "Save this opportunity as a draft before exiting?\nOK = Save as draft, Cancel = Exit without saving."
+    );
+    if (confirmSave) {
+      await saveDraftAndExit();
+    } else {
+      handleExitWithoutSave();
+    }
   };
 
   if (!loaded) {
@@ -128,15 +171,14 @@ export default function EditOpportunity() {
     );
   }
 
-  if (!existing) {
+  if (!existing && loadError) {
     // no such opp in this org's local state
     return (
       <Box py={16} bg={pageBg} minH="calc(100vh - 160px)">
         <Container maxW="container.md">
           <Heading mb={3} color={textPrimary}>Opportunity not found</Heading>
           <Text mb={6} color={textMuted}>
-            We couldn&apos;t find this opportunity in your created list. It may
-            have been removed.
+            {loadError}
           </Text>
           <Button onClick={() => navigate("/org/dashboard")} colorScheme="teal">
             Back to dashboard
@@ -154,7 +196,7 @@ export default function EditOpportunity() {
         title: "Missing fields",
         description: "Please fill in all required fields.",
         status: "warning",
-        duration: 3000,
+        duration: 6000,
         isClosable: true,
       });
       return;
@@ -168,6 +210,7 @@ export default function EditOpportunity() {
         location,
         start_date: new Date(date).toISOString(),
         is_active: status === "Open",
+        org_id: user?.organization_id,
       });
 
       updateCreatedOpportunity(id, {
@@ -185,7 +228,7 @@ export default function EditOpportunity() {
         title: "Opportunity updated",
         description: "Changes saved.",
         status: "success",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
 
@@ -195,7 +238,7 @@ export default function EditOpportunity() {
       toast({
         title: msg,
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
     } finally {
@@ -216,7 +259,7 @@ export default function EditOpportunity() {
             icon={<CloseIcon />}
             size="sm"
             variant="ghost"
-            onClick={() => setShowConfirm(true)}
+            onClick={handleCancel}
             isDisabled={disableAll}
           />
         </HStack>
@@ -319,7 +362,7 @@ export default function EditOpportunity() {
                 variant="ghost"
                 mt={2}
                 alignSelf="flex-start"
-                onClick={() => setShowConfirm(true)}
+                onClick={handleCancel}
                 isDisabled={disableAll}
               >
                 Cancel
@@ -327,35 +370,6 @@ export default function EditOpportunity() {
             </HStack>
           </Stack>
         </Box>
-
-        <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} isCentered>
-          <ModalOverlay />
-          <ModalContent bg={cardBg} borderColor={borderColor} borderWidth="1px">
-            <ModalHeader color={textPrimary}>Save as draft before exiting?</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <Text color={textMuted}>
-                You have unsaved edits. Save this opportunity as a draft or exit without saving.
-              </Text>
-            </ModalBody>
-            <ModalFooter gap={3}>
-              <Button
-                variant="ghost"
-                onClick={handleExitWithoutSave}
-                isDisabled={closing}
-              >
-                Exit without saving
-              </Button>
-              <Button
-                colorScheme="teal"
-                onClick={saveDraftAndExit}
-                isLoading={closing}
-              >
-                Save as draft
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
       </Container>
     </Box>
   );

@@ -8,10 +8,17 @@ import {
   Button,
   Badge,
   useColorModeValue,
+  useDisclosure,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
   } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { api } from "../../api/client";
 import useAppToast from "../../hooks/useAppToast";
 
@@ -27,6 +34,11 @@ export default function OrgDashboard() {
 
   const [orgEvents, setOrgEvents] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [orgApps, setOrgApps] = useState([]);
+  const [loadingApps, setLoadingApps] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = useRef();
 
   const loadOrgEvents = async () => {
     if (!user?.organization_id) return;
@@ -56,8 +68,25 @@ export default function OrgDashboard() {
     }
   };
 
+  const loadOrgApplications = async () => {
+    if (!user?.organization_id) return;
+    setLoadingApps(true);
+    try {
+      const res = await api.get("/applications/org", { params: { org_id: user.organization_id } });
+      setOrgApps(res.data?.applications || []);
+    } catch (err) {
+      toast({
+        title: "Could not load applications",
+        status: "error",
+      });
+    } finally {
+      setLoadingApps(false);
+    }
+  };
+
   useEffect(() => {
     loadOrgEvents();
+    loadOrgApplications();
   }, [user?.organization_id]);
 
   const mergedEvents = useMemo(() => {
@@ -75,38 +104,45 @@ export default function OrgDashboard() {
     navigate(`/org/opportunities/${evt.id}/edit`);
   };
 
-  const handleDelete = async (id) => {
-    const ok = window.confirm(
-      "Delete this opportunity? This cannot be undone."
-    );
-    if (!ok) return;
+  const isNumericId = (val) => /^\d+$/.test(String(val || ""));
 
+  const handleDelete = (id) => {
+    setDeleteId(id);
+    onOpen();
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.delete(`/opportunities/${id}`);
-      deleteCreatedOpportunity(id);
-      setOrgEvents((cur) => cur.filter((o) => String(o.id) !== String(id)));
+      await api.delete(`/opportunities/${deleteId}`);
+      deleteCreatedOpportunity(deleteId);
+      setOrgEvents((cur) => cur.filter((o) => String(o.id) !== String(deleteId)));
 
       toast({
         title: "Opportunity deleted",
         status: "info",
-        duration: 2500,
-        isClosable: true,
       });
     } catch (err) {
       const msg = err?.response?.data?.error || "Could not delete opportunity";
       toast({
         title: msg,
         status: "error",
-        duration: 3000,
-        isClosable: true,
       });
+    } finally {
+      setDeleteId(null);
+      onClose();
     }
   };
 
   return (
     <Container maxW="6xl" py={10}>
       <Stack spacing={8}>
-        <Heading size="2xl" color={textPrimary}>Organization Dashboard</Heading>
+        <Stack direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "flex-start", sm: "center" }}>
+          <Heading size="2xl" color={textPrimary}>Organization Dashboard</Heading>
+          <Button variant="outline" size="sm" onClick={() => navigate("/account")}>
+            Account Settings
+          </Button>
+        </Stack>
 
         {/* Top actions */}
         <Box p={6} bg={cardBg} rounded="2xl" shadow="md" border={`1px solid ${borderColor}`}>
@@ -177,14 +213,16 @@ export default function OrgDashboard() {
                       mr={2}
                       variant="outline"
                       onClick={() => handleEdit(evt)}
+                      isDisabled={!isNumericId(evt.id)}
                     >
-                      Edit
+                      {isNumericId(evt.id) ? "Edit" : "Unsynced"}
                     </Button>
                     <Button
                       size="sm"
                       colorScheme="red"
                       variant="ghost"
                       onClick={() => handleDelete(evt.id)}
+                      isDisabled={!isNumericId(evt.id)}
                     >
                       Delete
                     </Button>
@@ -194,7 +232,62 @@ export default function OrgDashboard() {
             </SimpleGrid>
           )}
         </Box>
+
+        <Box p={6} bg={cardBg} rounded="2xl" shadow="md" border={`1px solid ${borderColor}`}>
+          <Heading size="lg" mb={4} color={textPrimary}>
+            Applications for your opportunities
+          </Heading>
+          {orgApps.length === 0 ? (
+            <Text color={textMuted}>{loadingApps ? "Loading..." : "No applications yet."}</Text>
+          ) : (
+            <Stack spacing={3}>
+              {orgApps.map((app) => (
+                <Box key={app.id} p={4} bg={panelBg} rounded="md" border={`1px solid ${borderColor}`}>
+                  <Text color={textPrimary} fontWeight="bold">
+                    Application #{app.id} — Opportunity #{app.opportunity_id}
+                  </Text>
+                  <Text color={textMuted}>Volunteer ID: {app.user_id}</Text>
+                  <Text color={textMuted}>Status: {app.status}</Text>
+                </Box>
+              ))}
+            </Stack>
+          )}
+          <Button mt={4} size="sm" variant="outline" onClick={loadOrgApplications} isLoading={loadingApps}>
+            Refresh applications
+          </Button>
+        </Box>
       </Stack>
+
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => {
+          setDeleteId(null);
+          onClose();
+        }}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete opportunity?
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              This cannot be undone. Do you want to delete this opportunity?
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef.current} onClick={() => { setDeleteId(null); onClose(); }}>
+                Cancel
+              </Button>
+              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Container>
   );
 }

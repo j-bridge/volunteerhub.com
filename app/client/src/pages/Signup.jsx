@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -19,6 +19,8 @@ import {
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import useAppToast from "../hooks/useAppToast";
+import { useAuth } from "../context/AuthContext";
+import { useLocation } from "react-router-dom";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -29,6 +31,8 @@ export default function Signup() {
   const [submitting, setSubmitting] = useState(false);
   const toast = useAppToast();
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
+  const location = useLocation();
   const pageBg = useColorModeValue(
     "linear-gradient(135deg, #f5f1e8, #ede8de)",
     "radial-gradient(120% 120% at 10% 20%, rgba(24,178,165,0.18), transparent 45%), linear-gradient(145deg, #0b1f24, #08141a)"
@@ -48,6 +52,25 @@ export default function Signup() {
   const passwordValid =
     password.length === 0 ||
     (password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password));
+
+  // Preselect account type when arriving with state from the home "journey" cards
+  useEffect(() => {
+    const desired = location.state?.accountType;
+    if (desired === "organization" || desired === "volunteer") {
+      setRole(desired);
+    }
+  }, [location.state]);
+
+  const extractToken = (data) => {
+    if (!data) return null;
+    if (data.access_token) return data.access_token;
+    if (data.token) return data.token;
+    if (data.tokens?.access_token) return data.tokens.access_token;
+    if (data.data?.access_token) return data.data.access_token;
+    if (data.data?.token) return data.data.token;
+    if (data.data?.tokens?.access_token) return data.data.tokens.access_token;
+    return null;
+  };
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -87,20 +110,25 @@ export default function Signup() {
       const data = res.data || {};
 
       if (res.status >= 200 && res.status < 300) {
+        const token = extractToken(data);
+        if (token && data.user) {
+          authLogin(token, data.user, true);
+        }
         toast({
           title: "Signup successful!",
-          description: "You can now log in.",
+          description: "Welcome to VolunteerHub.",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
-        // Clear and navigate to login
-        setName("");
-        setEmail("");
-        setPassword("");
-        setRole("volunteer");
-        setOrganizationName("");
-        navigate("/login");
+        const role = data?.user?.role || role || "volunteer";
+        const dashboardPath =
+          role === "admin"
+            ? "/admin/dashboard"
+            : role === "organization"
+              ? "/org/dashboard"
+              : "/dashboard";
+        navigate(dashboardPath, { replace: true });
       } else {
         throw new Error(data?.message || "Signup failed");
       }

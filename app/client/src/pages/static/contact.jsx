@@ -1,6 +1,6 @@
 // app/client/src/pages/static/Contact.jsx
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Heading,
@@ -33,6 +33,17 @@ const Contact = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Prefill from logged-in user
+  useEffect(() => {
+    if (!user) return;
+    setForm((f) => ({
+      ...f,
+      name: f.name || user.name || "",
+      email: f.email || user.email || "",
+      organization: f.organization || user.organization_name || "",
+    }));
+  }, [user]);
+
   const destination =
     !user
       ? "/"
@@ -45,13 +56,44 @@ const Contact = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return;
+
+    const trimmedName = form.name.trim();
+    const trimmedEmail = form.email.trim();
+    const trimmedMessage = form.message.trim();
+    const emailValid = /^\S+@\S+\.\S+$/.test(trimmedEmail);
+
+    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in your name, email, and message.",
+        status: "warning",
+      });
+      return;
+    }
+    if (!emailValid) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+        status: "error",
+      });
+      return;
+    }
+    if (trimmedMessage.length < 5) {
+      toast({
+        title: "Message too short",
+        description: "Please provide a bit more detail in your message.",
+        status: "warning",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await api.post("/contact", {
-        name: form.name,
-        email: form.email,
+        name: trimmedName,
+        email: trimmedEmail,
         organization: form.organization || undefined,
-        message: form.message,
+        message: trimmedMessage,
       });
       setSubmitted(true);
       toast({

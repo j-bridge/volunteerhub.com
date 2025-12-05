@@ -17,10 +17,12 @@ import {
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import useAppToast from "../hooks/useAppToast";
+import { useNavigate } from "react-router-dom";
 
 export default function Account() {
   const toast = useAppToast();
   const { user, updateUserProfile } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "" });
   const [orgForm, setOrgForm] = useState({ name: "", contact_email: "", description: "" });
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,13 @@ export default function Account() {
   const pageBg = useColorModeValue("gray.50", "#0a121a");
   const textPrimary = useColorModeValue("gray.800", "gray.100");
   const textMuted = useColorModeValue("gray.600", "gray.300");
+  const dashboardPath = user
+    ? user.role === "organization"
+      ? "/org/dashboard"
+      : user.role === "admin"
+        ? "/admin/dashboard"
+        : "/dashboard"
+    : "/";
 
   const loadProfile = async () => {
     try {
@@ -109,8 +118,22 @@ export default function Account() {
     <Box bg={pageBg} minH="100vh" py={{ base: 10, md: 16 }}>
       <Container maxW="lg">
         <Stack spacing={6}>
-          <Heading size="xl" color={textPrimary}>Account Settings</Heading>
-          <Text color={textMuted}>Update your name and email used across VolunteerHub.</Text>
+          <Stack direction={{ base: "column", sm: "row" }} align={{ base: "flex-start", sm: "center" }} spacing={3} justify="space-between">
+            <Box>
+              <Heading size="xl" color={textPrimary}>Account Settings</Heading>
+              <Text color={textMuted}>Update your name and email used across VolunteerHub.</Text>
+            </Box>
+            <Stack direction="row" spacing={2}>
+              <Button size="sm" variant="outline" onClick={() => navigate(dashboardPath)}>
+                Return to Dashboard
+              </Button>
+              {user?.role === "admin" && (
+                <Button size="sm" variant="ghost" onClick={() => navigate("/admin/dashboard")}>
+                  Return to Admin
+                </Button>
+              )}
+            </Stack>
+          </Stack>
 
           <Box
             as="form"

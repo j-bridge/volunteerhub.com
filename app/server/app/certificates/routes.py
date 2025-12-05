@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 from flask import Blueprint, jsonify, request, current_app, send_file, url_for
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import (
+    get_jwt_identity,
+    jwt_required,
+    decode_token,
+    create_access_token,
+)
 from marshmallow import ValidationError
 
 from ..extensions import db
@@ -116,6 +121,9 @@ def issue_certificate():
         current_app.logger.exception("Failed to generate certificate PDF: %s", exc)
         return jsonify({"error": "Certificate saved but PDF generation failed"}), 500
 
+    # Include a signed download URL so volunteers can access from their email without logging in
+    signed_download_url = f"{download_url}?token={create_access_token(identity=str(volunteer.id), additional_claims={'role': volunteer.role})}"
+
     try:
         if volunteer.email:
             send_templated_email(
@@ -126,7 +134,7 @@ def issue_certificate():
                     "user_name": volunteer.name or volunteer.email,
                     "organization_name": org.name,
                     "hours": payload["hours"],
-                    "download_url": download_url,
+                    "download_url": signed_download_url,
                 },
             )
     except Exception as exc:  # pragma: no cover - defensive logging
@@ -184,13 +192,25 @@ def retrieve_certificate(certificate_id: int):
 
 
 @bp.get("/<int:certificate_id>/pdf")
-@jwt_required()
+@jwt_required(optional=True)
 def download_certificate(certificate_id: int):
     cert = db.session.get(Certificate, certificate_id)
     if not cert:
         return jsonify({"error": "Certificate not found"}), 404
 
     user = _get_user(_current_user_id())
+
+    # Allow access via a signed token in the query string (for emailed links)
+    if not user:
+        token_param = request.args.get("token")
+        if token_param:
+            try:
+                decoded = decode_token(token_param)
+                identity = decoded.get("sub")
+                user = _get_user(int(identity)) if identity is not None else None
+            except Exception:
+                return jsonify({"error": "Invalid or expired token"}), 401
+
     if not _can_access_certificate(user, cert):
         return jsonify({"error": "Forbidden"}), 403
 

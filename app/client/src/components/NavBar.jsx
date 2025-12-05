@@ -2,6 +2,7 @@ import { Box, Flex, HStack, Link, Button, Spacer, Text, Image, Stack, IconButton
 import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { HamburgerIcon, CloseIcon, MoonIcon, SunIcon } from "@chakra-ui/icons";
+import { FaUserCircle } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 export default function NavBar() {
@@ -21,6 +22,7 @@ export default function NavBar() {
   const accent = useColorModeValue("#1aa59a", "#0f6c5f");
   const linkColor = useColorModeValue("#1f262a", "#e2e8f0");
   const activeColor = accent;
+  const helloColor = useColorModeValue("gray.600", "silver");
 
   const handleLogout = () => {
     logout();
@@ -130,14 +132,23 @@ export default function NavBar() {
                     ? "/admin/dashboard"
                     : "/dashboard"
               }
-                fontWeight="500"
+              fontWeight="500"
               className="vh-nav-link"
+              _hover={{ textDecoration: "none" }}
+              _activeLink={{ textDecoration: "none", color: activeColor }}
             >
               My Dashboard
             </Link>
           )}
           {user && (
-            <Link as={RouterLink} to="/account" fontWeight="500" className="vh-nav-link">
+            <Link
+              as={RouterLink}
+              to="/account"
+              fontWeight="500"
+              className="vh-nav-link"
+              _hover={{ textDecoration: "none" }}
+              _activeLink={{ textDecoration: "none", color: activeColor }}
+            >
               Account
             </Link>
           )}
@@ -163,7 +174,7 @@ export default function NavBar() {
         {/* Auth-aware actions */}
         {user ? (
           <HStack spacing={4} display={{ base: "none", md: "flex" }}>
-            <Text fontSize="sm" color="gray.600">
+            <Text fontSize="sm" color={helloColor}>
               Hello, {user?.name || user?.email || "Volunteer"}
             </Text>
             <Button
@@ -194,12 +205,22 @@ export default function NavBar() {
 
         {/* Mobile menu toggle */}
         <Box display={{ base: "block", md: "none" }}>
-          <IconButton
-            aria-label="Toggle menu"
-            icon={mobileOpen ? <CloseIcon /> : <HamburgerIcon />}
-            variant="ghost"
-            onClick={() => setMobileOpen((v) => !v)}
-          />
+          <HStack spacing={2}>
+            {user && (
+              <IconButton
+                aria-label="Account"
+                icon={<FaUserCircle />}
+                variant="ghost"
+                onClick={() => navigate("/account")}
+              />
+            )}
+            <IconButton
+              aria-label="Toggle menu"
+              icon={mobileOpen ? <CloseIcon /> : <HamburgerIcon />}
+              variant="ghost"
+              onClick={() => setMobileOpen((v) => !v)}
+            />
+          </HStack>
         </Box>
       </Flex>
 

@@ -73,9 +73,14 @@ export default function VolunteerDashboard() {
   return (
     <Container maxW="6xl" py={10}>
       <Stack spacing={8}>
-        <Heading size="2xl" color={textPrimary}>
-          My Dashboard
-        </Heading>
+        <Stack direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "flex-start", sm: "center" }}>
+          <Heading size="2xl" color={textPrimary}>
+            My Dashboard
+          </Heading>
+          <Button variant="outline" size="sm" onClick={() => navigate("/account")}>
+            Account Settings
+          </Button>
+        </Stack>
 
         {/* Quick actions / overview */}
         <SimpleGrid columns={{ base: 1, md: 3 }} gap={6}>

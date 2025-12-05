@@ -6,6 +6,7 @@ import "./App.css";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ResetPassword from "./pages/ResetPassword.jsx";
 import VideoGallery from "./pages/VideoGallery.jsx";
 import VideoSubmit from "./pages/VideoSubmit.jsx";
 
@@ -43,6 +44,7 @@ export default function App() {
         {/* Authentication routes */}
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
+        <Route path="reset" element={<ResetPassword />} />
 
         {/* Static pages */}
         <Route path="about" element={<About />} />

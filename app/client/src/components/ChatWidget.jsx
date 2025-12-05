@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   Box,
   Button,
@@ -19,6 +20,7 @@ import { api } from "../api/client";
 import { opportunities as mockOpportunities } from "../mock/opportunities";
 
 export default function ChatWidget() {
+  const { user, saveOpportunity } = useAuth();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -276,11 +278,15 @@ export default function ChatWidget() {
     addUserMessage(userMessage);
     setMessage("");
 
-    const lowerMessage = userMessage.toLowerCase();
+    const normalizedMsg = normalizeText(userMessage);
 
-    // Handle "saved opportunities" query
-    if (lowerMessage.includes("saved") || lowerMessage.includes("save")) {
+    // Handle "show saved" intent
+    if (normalizedMsg.includes("saved")) {
       const saved = JSON.parse(localStorage.getItem("vh_saved_opportunities") || "[]");
+      // Sync saved items into dashboard state when logged in
+      if (user && saveOpportunity && Array.isArray(saved)) {
+        saved.forEach((opp) => saveOpportunity(opp));
+      }
       if (saved.length > 0) {
         addBotMessage(
           `You have ${saved.length} saved opportunit${saved.length === 1 ? "y" : "ies"}:`,
@@ -295,12 +301,33 @@ export default function ChatWidget() {
     }
 
     // Handle help/restart
-    if (lowerMessage.includes("help") || lowerMessage.includes("start over")) {
+    if (normalizedMsg.includes("help") || normalizedMsg.includes("start over")) {
       setStep("greeting");
       setSuggestedOpportunities([]);
       addBotMessage(
         "No problem! What kind of volunteer work are you interested in? You can mention the type of work and location."
       );
+      return;
+    }
+
+    // Global "save these" handler (works even if step got reset)
+    if (normalizedMsg.includes("save") && suggestedOpportunities.length > 0) {
+      const existing = JSON.parse(localStorage.getItem("vh_saved_opportunities") || "[]");
+      const newSaved = [...existing];
+      suggestedOpportunities.forEach((opp) => {
+        if (!newSaved.find((s) => s.id === opp.id)) {
+          newSaved.push(opp);
+          if (user && saveOpportunity) {
+            saveOpportunity(opp);
+          }
+        }
+      });
+      localStorage.setItem("vh_saved_opportunities", JSON.stringify(newSaved));
+      addBotMessage(
+        `Saved ${suggestedOpportunities.length} opportunit${suggestedOpportunities.length === 1 ? "y" : "ies"}! Type 'show saved' anytime to see them.`
+      );
+      addBotMessage("Is there anything else I can help you with?");
+      setStep("greeting");
       return;
     }
 
@@ -336,7 +363,7 @@ export default function ChatWidget() {
         setStep("showing_suggestions");
       }
     } else if (step === "showing_suggestions") {
-      if (lowerMessage.includes("save")) {
+      if (normalizedMsg.includes("save")) {
         // Save to localStorage
         const existing = JSON.parse(localStorage.getItem("vh_saved_opportunities") || "[]");
         const newSaved = [...existing];

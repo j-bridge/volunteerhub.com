@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from ..extensions import db
 from ..models import Application, Opportunity, User
-from ..permissions import organization_required
+from ..permissions import organization_required, org_admin_or_site_admin_required
 from ..schemas import ApplicationSchema, ApplicationCreateSchema, ApplicationReviewSchema
 from marshmallow import ValidationError
 from ..utils.emailer import send_email, send_templated_email
@@ -27,6 +27,23 @@ def my_applications():
     if user_id is None:
         return jsonify({"error": "Unauthorized"}), 401
     apps = Application.query.filter_by(user_id=user_id).order_by(Application.created_at.desc()).all()
+    return jsonify({"applications": applications_schema.dump(apps)})
+
+
+@bp.get("/org")
+@jwt_required()
+@org_admin_or_site_admin_required("org_id")
+def org_applications():
+    org_id = request.args.get("org_id", type=int)
+    if not org_id:
+        return jsonify({"error": "org_id is required"}), 400
+    # List applications for opportunities belonging to this org
+    apps = (
+        Application.query.join(Opportunity, Application.opportunity_id == Opportunity.id)
+        .filter(Opportunity.org_id == org_id)
+        .order_by(Application.created_at.desc())
+        .all()
+    )
     return jsonify({"applications": applications_schema.dump(apps)})
 
 
